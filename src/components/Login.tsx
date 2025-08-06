@@ -12,9 +12,21 @@ const Login: React.FC = () => {
       setError('');
       setLoading(true);
       await signInWithGoogle();
-    } catch (error) {
-      setError('Error al iniciar sesión con Google');
-      console.error(error);
+    } catch (error: any) {
+      console.error('Error en Google Sign In:', error);
+      
+      // Manejar errores específicos
+      if (error.code === 'auth/popup-closed-by-user') {
+        setError('Ventana de autenticación cerrada. Intenta nuevamente.');
+      } else if (error.code === 'auth/popup-blocked') {
+        setError('Popup bloqueado por el navegador. Permite popups para este sitio.');
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        setError('Solicitud de autenticación cancelada.');
+      } else if (error.code === 'auth/network-request-failed') {
+        setError('Error de conexión. Verifica tu internet.');
+      } else {
+        setError('Error al iniciar sesión con Google. Intenta nuevamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -25,9 +37,21 @@ const Login: React.FC = () => {
       setError('');
       setLoading(true);
       await signInWithFacebook();
-    } catch (error) {
-      setError('Error al iniciar sesión con Facebook');
-      console.error(error);
+    } catch (error: any) {
+      console.error('Error en Facebook Sign In:', error);
+      
+      // Manejar errores específicos
+      if (error.code === 'auth/popup-closed-by-user') {
+        setError('Ventana de autenticación cerrada. Intenta nuevamente.');
+      } else if (error.code === 'auth/popup-blocked') {
+        setError('Popup bloqueado por el navegador. Permite popups para este sitio.');
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        setError('Solicitud de autenticación cancelada.');
+      } else if (error.code === 'auth/network-request-failed') {
+        setError('Error de conexión. Verifica tu internet.');
+      } else {
+        setError('Error al iniciar sesión con Facebook. Intenta nuevamente.');
+      }
     } finally {
       setLoading(false);
     }

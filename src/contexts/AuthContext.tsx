@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { User, signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { auth, googleProvider, facebookProvider } from '../firebase/config';
 import { userService } from '../services/userService';
 
@@ -29,9 +29,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Función para detectar si es un dispositivo móvil
+  const isMobileDevice = () => {
+    const maxMobileWidth = 768;
+    const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      window.navigator.userAgent
+    );
+    const isMobileViewport = window.innerWidth <= maxMobileWidth;
+    return isMobileUserAgent || isMobileViewport;
+  };
+
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      if (isMobileDevice()) {
+        // Usar redirect para dispositivos móviles
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        // Usar popup para desktop
+        await signInWithPopup(auth, googleProvider);
+      }
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
@@ -40,7 +56,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithFacebook = async () => {
     try {
-      await signInWithPopup(auth, facebookProvider);
+      if (isMobileDevice()) {
+        // Usar redirect para dispositivos móviles
+        await signInWithRedirect(auth, facebookProvider);
+      } else {
+        // Usar popup para desktop
+        await signInWithPopup(auth, facebookProvider);
+      }
     } catch (error) {
       console.error('Error signing in with Facebook:', error);
       throw error;
@@ -57,6 +79,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    // Manejar el resultado del redirect al cargar la página
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log('✅ Autenticación por redirect exitosa:', result.user.uid);
+        }
+      } catch (error) {
+        console.error('❌ Error en autenticación por redirect:', error);
+      }
+    };
+
+    handleRedirectResult();
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       
