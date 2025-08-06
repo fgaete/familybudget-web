@@ -1,46 +1,184 @@
-# Getting Started with Create React App
+# Family Order - Aplicación Web de Gestión Familiar
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 📱 Descripción
 
-## Available Scripts
+Family Order es una aplicación web completa para la gestión familiar que incluye:
 
-In the project directory, you can run:
+- **Gestión de Menús**: Planifica comidas familiares con búsqueda de productos y precios
+- **Rutinas Familiares**: Organiza actividades y tareas del hogar
+- **Control de Presupuesto**: Monitorea gastos familiares
+- **Lista de Compras**: Gestiona compras con categorización
+- **Búsqueda de Productos**: Encuentra productos del supermercado Líder
+- **Precios de Supermercados**: Datos de precios de Líder (simulados)
+
+## 🚀 Características Principales
+
+### Búsqueda de Productos
+- Búsqueda de productos del **Supermercado Líder** (simulado)
+- Control de cantidades por producto
+- Información detallada de productos (marca, categoría, precio)
+- Cálculo automático de costos de menús
+
+### Información de Precios
+- Base de datos de productos simulados de **Líder Supermercado**
+- Precios actualizados por producto
+- Cálculo automático de totales por menú
+- Formateo de precios en pesos chilenos
+
+### Gestión Completa
+- Interfaz moderna y responsiva
+- Navegación por pestañas intuitiva
+- Almacenamiento local de datos
+- Diseño optimizado para móviles
+
+## 🛠️ Configuración
+
+### Prerrequisitos
+- Node.js (versión 14 o superior)
+- npm o yarn
+
+### Instalación
+
+1. **Clona el repositorio**
+   ```bash
+   git clone <repository-url>
+   cd family-order-web
+   ```
+
+2. **Instala las dependencias**
+   ```bash
+   npm install
+   ```
+
+3. **Inicia el servidor de desarrollo**
+   ```bash
+   npm start
+   ```
+
+   La aplicación estará disponible en [http://localhost:3000](http://localhost:3000)
+
+## 🔧 Funcionalidades de Productos
+
+### Búsqueda de Productos Líder
+- **Búsqueda por nombre**: Encuentra productos escribiendo su nombre
+- **Productos simulados**: Base de datos con productos comunes del supermercado
+- **Precios en pesos chilenos**: Precios formateados correctamente
+- **Información completa**: Nombre, marca, categoría, precio por unidad
+- **Control de cantidades**: Ajusta cantidades antes de agregar al menú
+
+## 📊 Funcionalidades de la API
+
+### Líder Scraper (Simulado)
+- `searchLiderProducts()`: Busca productos por nombre
+- `getCheapestPrice()`: Encuentra el precio más bajo
+- `calculateShoppingListCost()`: Calcula costo total de compras
+- `formatChileanPrice()`: Formatea precios en CLP
+- `getProductDetails()`: Obtiene información detallada del producto
+
+## 🏗️ Estructura del Proyecto
+
+```
+src/
+├── components/
+│   ├── ProductSearch.tsx           # Componente de búsqueda de productos
+│   └── ProductSearch.css           # Estilos del componente
+├── services/
+│   └── liderScraper.ts             # Simulador de productos Líder
+├── App.tsx                         # Componente principal
+├── App.css                         # Estilos principales
+└── index.tsx                       # Punto de entrada
+```
+
+## 🎨 Tecnologías Utilizadas
+
+- **React 18** con TypeScript
+- **CSS3** con diseño responsivo
+- **Simulador de productos** para datos de Líder
+- **Create React App** como base
+
+## 📱 Uso de la Aplicación
+
+### Búsqueda de Productos
+1. Ve a la pestaña "🛒 Búsqueda de Productos"
+2. Escribe el nombre de un producto
+3. Selecciona de los resultados disponibles
+4. Ajusta la cantidad deseada
+5. Agrega al menú familiar
+
+### Gestión de Menús
+- Los menús agregados muestran productos y cantidades
+- Información completa de cada producto (marca, categoría)
+- Precios actualizados de supermercados
+- Cálculo automático de costos totales
+
+## 🚧 Desarrollo Futuro
+
+### Implementación Real de Web Scraping
+Para una versión de producción con scraping real de Líder:
+
+```javascript
+// Ejemplo conceptual - requiere backend
+async function scrapeLiderProducts(query) {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  
+  await page.goto(`https://www.lider.cl/supermercado/search?query=${query}`);
+  
+  const products = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.product-item')).map(item => ({
+      name: item.querySelector('.product-name')?.textContent,
+      price: parseFloat(item.querySelector('.price')?.textContent?.replace(/[^0-9]/g, '')),
+      brand: item.querySelector('.brand')?.textContent,
+      category: item.querySelector('.category')?.textContent
+    }));
+  });
+  
+  await browser.close();
+  return products;
+}
+```
+
+### Mejoras Planificadas
+- Backend con Node.js para web scraping real
+- API de productos en tiempo real
+- Base de datos para almacenamiento persistente
+- Autenticación de usuarios
+- Sincronización entre dispositivos
+- Comparador de precios entre supermercados
+- Exportación de listas de compras
+
+## 📄 Scripts Disponibles
 
 ### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Inicia el servidor de desarrollo en [http://localhost:3000](http://localhost:3000)
 
 ### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Ejecuta las pruebas en modo interactivo
 
 ### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Construye la aplicación para producción en la carpeta `build/`
 
 ### `npm run eject`
+⚠️ **Operación irreversible**: Expone la configuración de webpack
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## 🤝 Contribución
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## 📞 Soporte
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Para soporte técnico o preguntas:
+- Crea un issue en GitHub
+- Consulta la documentación de [Create React App](https://facebook.github.io/create-react-app/docs/getting-started)
 
-## Learn More
+## 📝 Licencia
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
+
+**Family Order** - Simplificando la gestión familiar con tecnología moderna 🏠✨
