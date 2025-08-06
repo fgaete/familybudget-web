@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Welcome from './components/Welcome';
 import Login from './components/Login';
 import BudgetSetup from './components/BudgetSetup';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -38,6 +39,10 @@ function AppContent() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBudgetSetup, setShowBudgetSetup] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(() => {
+    // Solo mostrar welcome si el usuario nunca la ha visto
+    return !localStorage.getItem('hasSeenWelcome');
+  });
   const [activeTab, setActiveTab] = useState<TabType>('budget');
   const [editingBudgetItem, setEditingBudgetItem] = useState<any>(null);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
@@ -101,8 +106,14 @@ function AppContent() {
     loadUserData();
   }, [currentUser]);
 
-  // Si no hay usuario autenticado, mostrar login
+  // Si no hay usuario autenticado, mostrar welcome o login
   if (!currentUser) {
+    if (showWelcome) {
+      return <Welcome onGetStarted={() => {
+        localStorage.setItem('hasSeenWelcome', 'true');
+        setShowWelcome(false);
+      }} />;
+    }
     return <Login />;
   }
 
