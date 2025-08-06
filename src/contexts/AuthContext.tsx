@@ -1,13 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
-import { auth, googleProvider, facebookProvider } from '../firebase/config';
+import { auth, googleProvider } from '../firebase/config';
 import { userService } from '../services/userService';
 
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
-  signInWithFacebook: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -54,20 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signInWithFacebook = async () => {
-    try {
-      if (isMobileDevice()) {
-        // Usar redirect para dispositivos móviles
-        await signInWithRedirect(auth, facebookProvider);
-      } else {
-        // Usar popup para desktop
-        await signInWithPopup(auth, facebookProvider);
-      }
-    } catch (error) {
-      console.error('Error signing in with Facebook:', error);
-      throw error;
-    }
-  };
+
 
   const logout = async () => {
     try {
@@ -131,7 +117,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     currentUser,
     loading,
     signInWithGoogle,
-    signInWithFacebook,
     logout
   };
 

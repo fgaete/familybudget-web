@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getAnalytics } from 'firebase/analytics';
 
@@ -24,15 +24,10 @@ export const analytics = getAnalytics(app);
 
 // Proveedores de autenticación
 export const googleProvider = new GoogleAuthProvider();
-export const facebookProvider = new FacebookAuthProvider();
 
 // Configurar proveedores
 googleProvider.setCustomParameters({
   prompt: 'select_account'
-});
-
-facebookProvider.setCustomParameters({
-  display: 'popup'
 });
 
 export default app;
