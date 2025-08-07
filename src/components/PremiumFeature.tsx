@@ -9,31 +9,25 @@ interface PremiumFeatureProps {
 }
 
 const PremiumFeature: React.FC<PremiumFeatureProps> = ({ children, className = '', onClick, title }) => {
-  const { isPremium, setShowPremiumModal } = useSubscription();
+  const { isPremium } = useSubscription();
+
+  // Si no es premium, no renderizar nada (ocultar completamente)
+  if (!isPremium) {
+    return null;
+  }
 
   const handleClick = () => {
-    if (!isPremium) {
-      setShowPremiumModal(true);
-    } else if (onClick) {
+    if (onClick) {
       onClick();
     }
   };
 
   return (
     <div 
-      className={`premium-feature ${!isPremium ? 'premium-locked' : ''} ${className}`}
+      className={`premium-feature ${className}`}
       onClick={handleClick}
     >
-      {!isPremium && (
-        <div className="premium-overlay">
-          <div className="premium-lock-icon">🔒</div>
-          <div className="premium-badge">PREMIUM</div>
-          {title && <div className="premium-title">{title}</div>}
-        </div>
-      )}
-      <div className={!isPremium ? 'premium-content-blurred' : ''}>
-        {children}
-      </div>
+      {children}
     </div>
   );
 };
