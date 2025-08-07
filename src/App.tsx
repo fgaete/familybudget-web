@@ -8,6 +8,7 @@ import BudgetSetup from './components/BudgetSetup';
 import FinancialAnalysis from './components/FinancialAnalysis';
 import PremiumModal from './components/PremiumModal';
 import PremiumFeature from './components/PremiumFeature';
+import AdminCleanup from './components/AdminCleanup';
 
 
 // import { formatChileanPrice } from './services/liderScraper'; // Replaced by formatPrice from i18n
@@ -61,8 +62,19 @@ function AppContent() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
-  
+  const [showAdminCleanup, setShowAdminCleanup] = useState(false);
+  const [adminClickCount, setAdminClickCount] = useState(0);
 
+  // Función para acceder al panel de administración
+  const handleAdminAccess = () => {
+    const newCount = adminClickCount + 1;
+    setAdminClickCount(newCount);
+    
+    if (newCount >= 5) {
+      setShowAdminCleanup(true);
+      setAdminClickCount(0);
+    }
+  };
 
   // Estados locales para la interfaz
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -375,7 +387,13 @@ function AppContent() {
     <div className="App">
       <header className="app-header">
         <div className="header-left">
-          <h1>💰 {t.appTitle}</h1>
+          <h1 
+            onClick={handleAdminAccess}
+            style={{ cursor: 'pointer' }}
+            title={`Clics: ${adminClickCount}/5 para admin`}
+          >
+            💰 {t.appTitle}
+          </h1>
         </div>
         <div className="header-center">
           <nav className="tab-navigation">
@@ -697,6 +715,10 @@ function AppContent() {
         </div>
       )}
 
+      {/* Admin Cleanup Panel */}
+      {showAdminCleanup && (
+        <AdminCleanup onClose={() => setShowAdminCleanup(false)} />
+      )}
 
     </div>
   );
