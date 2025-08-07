@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslations, formatPrice } from '../utils/i18n';
 import PremiumFeature from './PremiumFeature';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface Expense {
   name?: string;
@@ -43,6 +44,35 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
   const sortedCategories = Object.entries(categoryTotals)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5);
+
+  // Chart data functions
+  const getBudgetOverviewData = () => {
+    const data = [
+      { name: 'Gastos Fijos', value: totalFixedExpenses, color: '#8884d8' },
+      { name: 'Gastos Variables', value: totalVariableExpenses, color: '#82ca9d' },
+      { name: 'Presupuesto Restante', value: Math.max(0, remainingBudget), color: '#ffc658' }
+    ];
+    return data.filter(item => item.value > 0);
+  };
+
+  const getFixedExpensesData = () => {
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00', '#ff00ff'];
+    return fixedExpenses.map((expense, index) => ({
+      name: expense.name || expense.description || 'Sin nombre',
+      value: expense.amount,
+      color: colors[index % colors.length]
+    }));
+  };
+
+  const getVariableExpensesData = () => {
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00', '#ff00ff'];
+    const categoryData = Object.entries(categoryTotals).map(([category, amount], index) => ({
+      name: category,
+      value: amount,
+      color: colors[index % colors.length]
+    }));
+    return categoryData;
+  };
 
 
 
@@ -179,6 +209,92 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
                 </>
               )}
             </div>
+          </div>
+        </PremiumFeature>
+
+        {/* Gráficos de análisis del presupuesto */}
+        <PremiumFeature title="Gráficos de Análisis del Presupuesto">
+          <div className="charts-section">
+            <h2>📊 Análisis del Presupuesto</h2>
+            
+            {/* Gráfico general del presupuesto */}
+            <div className="chart-container">
+              <h3>Distribución General del Presupuesto</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={getBudgetOverviewData()}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {getBudgetOverviewData().map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Gráfico de gastos fijos por categoría */}
+            {fixedExpenses && fixedExpenses.length > 0 && (
+              <div className="chart-container">
+                <h3>Desglose de Gastos Fijos</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={getFixedExpensesData()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {getFixedExpensesData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* Gráfico de gastos variables por categoría */}
+            {variableExpenses.length > 0 && (
+              <div className="chart-container">
+                <h3>Desglose de Gastos Variables</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={getVariableExpensesData()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {getVariableExpensesData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </PremiumFeature>
 

@@ -7,7 +7,7 @@ import BudgetSetup from './components/BudgetSetup';
 import FinancialAnalysis from './components/FinancialAnalysis';
 import PremiumModal from './components/PremiumModal';
 import PremiumFeature from './components/PremiumFeature';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
 
 // import { formatChileanPrice } from './services/liderScraper'; // Replaced by formatPrice from i18n
 import { userService, UserData } from './services/userService';
@@ -189,18 +189,18 @@ function AppContent() {
     try {
       await userService.addPurchase(currentUser.uid, purchase);
       
-      // Actualizar estado local
-      const newTransaction: Transaction = {
-        id: purchase.id,
-        description,
-        amount,
-        category,
-        date: new Date().toLocaleDateString('es-CL')
-      };
-      setTransactions([...transactions, newTransaction]);
-      
-      // Actualizar presupuesto restante
-
+      // Recargar datos del usuario para actualizar la interfaz
+      const user = await userService.getUser(currentUser.uid);
+      if (user) {
+        setUserData(user);
+        setTransactions(user.purchases?.map(p => ({
+          id: p.id,
+          description: p.name,
+          amount: p.amount,
+          category: p.category,
+          date: p.date.toDate().toLocaleDateString('es-CL')
+        })) || []);
+      }
       
     } catch (error) {
       console.error('Error adding transaction:', error);
@@ -210,48 +210,7 @@ function AppContent() {
 
   // Removed shopping-related functions as shopping functionality is eliminated
 
-  // Functions to generate chart data
-  const getBudgetOverviewData = () => {
-    const fixedExpenses = userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0;
-    const variableExpenses = filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
-    const remaining = Math.max(0, monthlyBudget - fixedExpenses - variableExpenses);
-    
-    return [
-      { name: 'Gastos Fijos', value: fixedExpenses, color: '#FF6B6B' },
-      { name: 'Gastos Variables', value: variableExpenses, color: '#4ECDC4' },
-      { name: 'Presupuesto Restante', value: remaining, color: '#45B7D1' }
-    ];
-  };
 
-  const getFixedExpensesData = () => {
-    if (!userData?.budgetItems) return [];
-    
-    const categoryTotals: { [key: string]: number } = {};
-    userData.budgetItems.forEach(item => {
-      categoryTotals[item.category] = (categoryTotals[item.category] || 0) + item.amount;
-    });
-    
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'];
-    return Object.entries(categoryTotals).map(([category, amount], index) => ({
-      name: category.charAt(0).toUpperCase() + category.slice(1),
-      value: amount,
-      color: colors[index % colors.length]
-    }));
-  };
-
-  const getVariableExpensesData = () => {
-    const categoryTotals: { [key: string]: number } = {};
-    filteredTransactions.forEach(transaction => {
-      categoryTotals[transaction.category] = (categoryTotals[transaction.category] || 0) + transaction.amount;
-    });
-    
-    const colors = ['#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'];
-    return Object.entries(categoryTotals).map(([category, amount], index) => ({
-      name: category,
-      value: amount,
-      color: colors[index % colors.length]
-    }));
-  };
 
   // Función para actualizar el presupuesto mensual
   const updateMonthlyBudget = () => {
@@ -612,91 +571,7 @@ function AppContent() {
               </div>
             )}
 
-            {/* Gráficos de análisis del presupuesto */}
-            <PremiumFeature title="Gráficos de Análisis del Presupuesto">
-              <div className="charts-section">
-                <h2>📊 Análisis del Presupuesto</h2>
-                
-                {/* Gráfico general del presupuesto */}
-                <div className="chart-container">
-                  <h3>Distribución General del Presupuesto</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={getBudgetOverviewData()}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {getBudgetOverviewData().map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
 
-                {/* Gráfico de gastos fijos por categoría */}
-                {userData?.budgetItems && userData.budgetItems.length > 0 && (
-                  <div className="chart-container">
-                    <h3>Desglose de Gastos Fijos</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={getFixedExpensesData()}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {getFixedExpensesData().map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-
-                {/* Gráfico de gastos variables por categoría */}
-                {transactions.length > 0 && (
-                  <div className="chart-container">
-                    <h3>Desglose de Gastos Variables</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={getVariableExpensesData()}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {getVariableExpensesData().map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-            </PremiumFeature>
           </div>
         )}
 
