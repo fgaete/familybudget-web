@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import Welcome from './components/Welcome';
 import Login from './components/Login';
 import BudgetSetup from './components/BudgetSetup';
+import FinancialAnalysis from './components/FinancialAnalysis';
+import PremiumModal from './components/PremiumModal';
+import PremiumFeature from './components/PremiumFeature';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-import { formatChileanPrice } from './services/liderScraper';
+// import { formatChileanPrice } from './services/liderScraper'; // Replaced by formatPrice from i18n
 import { userService, UserData } from './services/userService';
+import { useTranslations, formatPrice } from './utils/i18n';
+import { useSubscription } from './contexts/SubscriptionContext';
 import { Timestamp } from 'firebase/firestore';
 import './App.css';
 
@@ -20,15 +26,18 @@ interface Transaction {
   date: string;
 }
 
-// Removed ShoppingItem interface as shopping functionality is eliminated
 
-type TabType = 'budget';
+
+type TabType = 'budget' | 'analysis';
 
 // Componente principal con autenticación
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <SubscriptionProvider>
+        <AppContent />
+        <PremiumModal />
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }
@@ -36,6 +45,8 @@ function App() {
 // Componente de contenido principal
 function AppContent() {
   const { currentUser, logout } = useAuth();
+  const { isPremium } = useSubscription();
+  const t = useTranslations();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBudgetSetup, setShowBudgetSetup] = useState(false);
@@ -46,6 +57,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<TabType>('budget');
   const [editingBudgetItem, setEditingBudgetItem] = useState<any>(null);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
+  
 
 
   // Estados locales para la interfaz
@@ -122,7 +134,7 @@ function AppContent() {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>Cargando...</p>
+        <p>{t.loading}</p>
       </div>
     );
   }
@@ -191,7 +203,7 @@ function AppContent() {
       
     } catch (error) {
       console.error('Error adding transaction:', error);
-      alert('Error al agregar la transacción');
+      alert(t.errorAddingTransaction);
     }
   };
 
@@ -269,7 +281,7 @@ function AppContent() {
       }
     } catch (error) {
       console.error('Error adding budget item:', error);
-      alert('Error al agregar el gasto fijo');
+      alert(t.errorAddingBudgetItem);
     }
   };
 
@@ -289,7 +301,7 @@ function AppContent() {
       setEditingBudgetItem(null);
     } catch (error) {
       console.error('Error updating budget item:', error);
-      alert('Error al actualizar el gasto fijo');
+      alert(t.errorUpdatingBudgetItem);
     }
   };
 
@@ -297,7 +309,7 @@ function AppContent() {
   const deleteBudgetItem = async (itemId: string) => {
     if (!currentUser) return;
     
-    if (window.confirm('¿Estás seguro de que quieres eliminar este gasto fijo?')) {
+    if (window.confirm(t.confirmDeleteBudgetItem)) {
       try {
         await userService.deleteBudgetItem(currentUser.uid, itemId);
         // Recargar datos del usuario
@@ -309,7 +321,7 @@ function AppContent() {
         }
       } catch (error) {
         console.error('Error deleting budget item:', error);
-        alert('Error al eliminar el gasto fijo');
+        alert(t.errorDeletingBudgetItem);
       }
     }
   };
@@ -343,7 +355,7 @@ function AppContent() {
       setEditingTransaction(null);
     } catch (error) {
       console.error('Error updating transaction:', error);
-      alert('Error al actualizar el gasto');
+        alert(t.errorUpdatingTransaction);
     }
   };
 
@@ -351,7 +363,7 @@ function AppContent() {
   const deleteTransaction = async (transactionId: string) => {
     if (!currentUser) return;
     
-    if (window.confirm('¿Estás seguro de que quieres eliminar este gasto?')) {
+    if (window.confirm(t.confirmDeleteTransaction)) {
       try {
         await userService.deletePurchase(currentUser.uid, transactionId);
         
@@ -365,19 +377,38 @@ function AppContent() {
         
       } catch (error) {
         console.error('Error deleting transaction:', error);
-        alert('Error al eliminar el gasto');
+          alert(t.errorDeletingTransaction);
       }
     }
   };
 
-  // Removed totalShopping calculation as shopping functionality is eliminated
+
+
+
+
   const budgetUsedPercentage = monthlyBudget > 0 ? ((monthlyBudget - remainingBudget) / monthlyBudget) * 100 : 0;
 
   return (
     <div className="App">
       <header className="app-header">
         <div className="header-left">
-          <h1>🏠 Family Order App</h1>
+          <h1>💰 {t.appTitle}</h1>
+        </div>
+        <div className="header-center">
+          <nav className="tab-navigation">
+            <button 
+              className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`}
+              onClick={() => setActiveTab('budget')}
+            >
+              {t.budgetTab}
+            </button>
+            <button 
+              className={`tab-btn ${activeTab === 'analysis' ? 'active' : ''}`}
+              onClick={() => setActiveTab('analysis')}
+            >
+              {t.analysisTab}
+            </button>
+          </nav>
         </div>
         <div className="header-right">
           <div className="user-info">
@@ -391,7 +422,7 @@ function AppContent() {
             <span className="user-name">{currentUser?.displayName}</span>
             <div className="budget-indicator">
               <span className="budget-text">
-                {formatChileanPrice(remainingBudget)} / {formatChileanPrice(monthlyBudget)}
+                {formatPrice(remainingBudget)} / {formatPrice(monthlyBudget)}
               </span>
               <div className="budget-bar">
                 <div 
@@ -405,7 +436,6 @@ function AppContent() {
             </button>
           </div>
         </div>
-        {/* Removed tab navigation as shopping functionality is eliminated */}
       </header>
 
       <main className="main-content">
@@ -413,33 +443,33 @@ function AppContent() {
 
         {activeTab === 'budget' && (
           <div className="tab-content">
-            <h2>Presupuesto Familiar</h2>
-            <div className="summary-card">
-              <h3>Resumen Mensual</h3>
-              <p>Presupuesto: ${monthlyBudget.toLocaleString('es-CL')}</p>
-              <p>Gastado: ${(monthlyBudget - remainingBudget).toLocaleString('es-CL')}</p>
-              <p>Restante: ${remainingBudget.toLocaleString('es-CL')}</p>
+            <h2>Presupuesto Personal</h2>
+            <PremiumFeature className="summary-card" title="Resumen de Presupuesto Mensual">
+              <h3>{t.monthlyBudget}</h3>
+              <p>{t.monthlyBudget}: {formatPrice(monthlyBudget)}</p>
+              <p>{t.usedBudget}: {formatPrice(monthlyBudget - remainingBudget)}</p>
+              <p>{t.remainingBudget}: {formatPrice(remainingBudget)}</p>
               <div className="budget-bar">
                 <div 
                   className="budget-progress" 
                   style={{ width: `${Math.min(budgetUsedPercentage, 100)}%` }}
                 ></div>
               </div>
-            </div>
+            </PremiumFeature>
 
-            <div className="add-form">
+            <PremiumFeature className="add-form" title="Configuración de Presupuesto">
               <h3>Configurar Presupuesto Mensual</h3>
               <p>Este es tu presupuesto general para gastos variables (compras, menús, etc.)</p>
               <button 
                 onClick={updateMonthlyBudget}
                 className="setup-btn"
               >
-                Actualizar Presupuesto Mensual
+                {t.setupBudget}
               </button>
-            </div>
+            </PremiumFeature>
 
-            <div className="add-form">
-              <h3>Gastos Fijos Mensuales</h3>
+            <PremiumFeature className="add-form" title="Registro de Gastos Fijos">
+              <h3>{t.fixedExpenses}</h3>
               <p>Registra aquí tus gastos básicos como servicios, hipoteca, créditos, etc.</p>
               <form onSubmit={(e) => {
                 e.preventDefault();
@@ -452,8 +482,8 @@ function AppContent() {
                   );
                 form.reset();
               }}>
-                <input name="name" placeholder="Descripción del gasto fijo" required />
-                 <input name="amount" type="number" placeholder="Monto mensual" required />
+                <input name="name" placeholder={t.expenseDescription} required />
+                 <input name="amount" type="number" placeholder={t.monthlyAmount} required />
                  <select name="category" required>
                    <option value="">Seleccionar categoría</option>
                    <option value="servicios">Servicios Básicos</option>
@@ -461,12 +491,12 @@ function AppContent() {
                    <option value="credito">Créditos</option>
                    <option value="otros">Otros Fijos</option>
                  </select>
-                <button type="submit">Agregar Gasto Fijo</button>
+                <button type="submit">{t.addFixedExpense}</button>
               </form>
-            </div>
+            </PremiumFeature>
 
             <div className="add-form">
-              <h3>Gastos Variables</h3>
+              <h3>{t.variableExpenses}</h3>
               <p>Registra aquí gastos ocasionales que no están incluidos en compras o menús</p>
               <form onSubmit={(e) => {
                 e.preventDefault();
@@ -479,57 +509,67 @@ function AppContent() {
                 );
                 form.reset();
               }}>
-                <input name="description" placeholder="Descripción del gasto" required />
-                <input name="amount" type="number" placeholder="Monto" required />
+                <input name="description" placeholder={t.expenseDescription} required />
+                <input name="amount" type="number" placeholder={t.amount} required />
                 <select name="category" required>
                   <option value="">Seleccionar categoría</option>
-                  <option value="Alimentación">Alimentación</option>
-                  <option value="Transporte">Transporte</option>
-                  <option value="Entretenimiento">Entretenimiento</option>
-                  <option value="Salud">Salud</option>
-                  <option value="Educación">Educación</option>
-                  <option value="Ropa">Ropa</option>
-                  <option value="Otros">Otros</option>
+                  {isPremium ? (
+                    <>
+                      <option value="Alimentación">Alimentación</option>
+                      <option value="Transporte">Transporte</option>
+                      <option value="Entretenimiento">Entretenimiento</option>
+                      <option value="Salud">Salud</option>
+                      <option value="Educación">Educación</option>
+                      <option value="Ropa">Ropa</option>
+                      <option value="Otros">Otros</option>
+                    </>
+                  ) : (
+                    <option value="Otros">Otros</option>
+                  )}
                 </select>
-                <button type="submit">Agregar Gasto</button>
+                <button type="submit">{t.addVariableExpense}</button>
               </form>
             </div>
 
-            {userData?.budgetItems && userData.budgetItems.length > 0 && (
-              <div className="budget-section">
-                <h3>📋 Gastos Fijos Mensuales</h3>
-                <div className="items-list">
-                  {userData.budgetItems.map(item => (
-                     <div key={item.id} className="item-card budget-item">
-                       <div className="item-content">
-                         <h4>{item.name}</h4>
-                         <p>Categoría: {item.category}</p>
-                         <p>Monto: ${item.amount.toLocaleString('es-CL')}</p>
+            <PremiumFeature className="budget-section" title="Lista de Gastos Fijos">
+              <h3>📋 Gastos Fijos Mensuales</h3>
+              {userData?.budgetItems && userData.budgetItems.length > 0 ? (
+                <>
+                  <div className="items-list">
+                    {userData.budgetItems.map(item => (
+                       <div key={item.id} className="item-card budget-item">
+                         <div className="item-content">
+                           <h4>{item.name}</h4>
+                           <p>Categoría: {item.category}</p>
+                           <p>Monto: ${item.amount.toLocaleString('es-CL')}</p>
+                         </div>
+                         <div className="item-actions">
+                           <button 
+                             className="edit-btn"
+                             onClick={() => setEditingBudgetItem(item)}
+                             title="Editar gasto fijo"
+                           >
+                             ✏️
+                           </button>
+                           <button 
+                             className="delete-btn"
+                             onClick={() => deleteBudgetItem(item.id)}
+                             title="Eliminar gasto fijo"
+                           >
+                             🗑️
+                           </button>
+                         </div>
                        </div>
-                       <div className="item-actions">
-                         <button 
-                           className="edit-btn"
-                           onClick={() => setEditingBudgetItem(item)}
-                           title="Editar gasto fijo"
-                         >
-                           ✏️
-                         </button>
-                         <button 
-                           className="delete-btn"
-                           onClick={() => deleteBudgetItem(item.id)}
-                           title="Eliminar gasto fijo"
-                         >
-                           🗑️
-                         </button>
-                       </div>
-                     </div>
-                   ))}
-                </div>
-                <div className="budget-summary">
-                  <p><strong>Total Gastos Fijos: ${userData.budgetItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString('es-CL')}</strong></p>
-                </div>
-              </div>
-            )}
+                     ))}
+                  </div>
+                  <div className="budget-summary">
+                    <p><strong>Total Gastos Fijos: ${userData.budgetItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString('es-CL')}</strong></p>
+                  </div>
+                </>
+              ) : (
+                <p>No hay gastos fijos registrados. Agrega algunos para comenzar.</p>
+              )}
+            </PremiumFeature>
 
             {transactions.length > 0 && (
               <div className="budget-section">
@@ -569,93 +609,102 @@ function AppContent() {
             )}
 
             {/* Gráficos de análisis del presupuesto */}
-            <div className="charts-section">
-              <h2>📊 Análisis del Presupuesto</h2>
-              
-              {/* Gráfico general del presupuesto */}
-              <div className="chart-container">
-                <h3>Distribución General del Presupuesto</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={getBudgetOverviewData()}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {getBudgetOverviewData().map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+            <PremiumFeature title="Gráficos de Análisis del Presupuesto">
+              <div className="charts-section">
+                <h2>📊 Análisis del Presupuesto</h2>
+                
+                {/* Gráfico general del presupuesto */}
+                <div className="chart-container">
+                  <h3>Distribución General del Presupuesto</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={getBudgetOverviewData()}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {getBudgetOverviewData().map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Gráfico de gastos fijos por categoría */}
+                {userData?.budgetItems && userData.budgetItems.length > 0 && (
+                  <div className="chart-container">
+                    <h3>Desglose de Gastos Fijos</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={getFixedExpensesData()}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {getFixedExpensesData().map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Gráfico de gastos variables por categoría */}
+                {transactions.length > 0 && (
+                  <div className="chart-container">
+                    <h3>Desglose de Gastos Variables</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={getVariableExpensesData()}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {getVariableExpensesData().map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
-
-              {/* Gráfico de gastos fijos por categoría */}
-              {userData?.budgetItems && userData.budgetItems.length > 0 && (
-                <div className="chart-container">
-                  <h3>Desglose de Gastos Fijos</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={getFixedExpensesData()}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {getFixedExpensesData().map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
-              {/* Gráfico de gastos variables por categoría */}
-              {transactions.length > 0 && (
-                <div className="chart-container">
-                  <h3>Desglose de Gastos Variables</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={getVariableExpensesData()}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, value }) => `${name}: $${value ? value.toLocaleString('es-CL') : '0'}`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {getVariableExpensesData().map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => `$${value.toLocaleString('es-CL')}`} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </div>
+            </PremiumFeature>
           </div>
         )}
 
-        {/* Shopping section removed completely */}
-
+        {activeTab === 'analysis' && (
+          <PremiumFeature title="Análisis Financiero Avanzado">
+            <FinancialAnalysis
+              monthlyBudget={monthlyBudget}
+              fixedExpenses={userData?.budgetItems || []}
+              variableExpenses={transactions}
+            />
+          </PremiumFeature>
+        )}
 
       </main>
 
@@ -751,6 +800,8 @@ function AppContent() {
           </div>
         </div>
       )}
+
+
     </div>
   );
 }

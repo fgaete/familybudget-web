@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslations } from '../utils/i18n';
 import './Welcome.css';
 
 interface WelcomeProps {
@@ -6,6 +7,8 @@ interface WelcomeProps {
 }
 
 const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
+  const t = useTranslations();
+  
   return (
     <div className="welcome-container">
       <div className="welcome-content">
@@ -20,8 +23,8 @@ const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
               <path d="M36 40l3 3 6-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <h1 className="app-title">Family Order</h1>
-          <p className="app-subtitle">Gestiona el presupuesto familiar de manera inteligente</p>
+          <h1 className="app-title">{t.appTitle}</h1>
+          <p className="app-subtitle">{t.appSubtitle}</p>
         </div>
 
         {/* Características principales */}
@@ -37,8 +40,8 @@ const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
                 <circle cx="24" cy="32" r="3" fill="#8B5CF6"/>
               </svg>
             </div>
-            <h3>Presupuesto Visual</h3>
-            <p>Visualiza tus gastos con gráficos interactivos y mantén el control de tu presupuesto familiar.</p>
+            <h3>{t.visualBudget}</h3>
+            <p>{t.visualBudgetDesc}</p>
           </div>
 
           <div className="feature-card">
@@ -50,8 +53,8 @@ const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
                 <path d="M32 36l3 3 6-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <h3>Seguimiento Inteligente</h3>
-            <p>Registra y categoriza tus gastos automáticamente para un mejor control financiero.</p>
+            <h3>{t.smartTracking}</h3>
+            <p>{t.smartTrackingDesc}</p>
           </div>
 
           <div className="feature-card">
@@ -64,21 +67,21 @@ const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
                 <circle cx="30" cy="30" r="3" fill="#F59E0B"/>
               </svg>
             </div>
-            <h3>Planificación Familiar</h3>
-            <p>Planifica compras y gastos en familia, manteniendo a todos informados y organizados.</p>
+            <h3>{t.personalPlanning}</h3>
+                <p>{t.personalPlanningDesc}</p>
           </div>
         </div>
 
         {/* Call to action */}
         <div className="cta-section">
           <button className="get-started-btn" onClick={onGetStarted}>
-            <span>Comenzar</span>
+            <span>{t.getStarted}</span>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M7.5 15l5-5-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
           <p className="cta-description">
-            Únete a miles de familias que ya gestionan su presupuesto de manera inteligente
+            {t.ctaDescription}
           </p>
         </div>
       </div>

@@ -35,20 +35,62 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       window.navigator.userAgent
     );
     const isMobileViewport = window.innerWidth <= maxMobileWidth;
-    return isMobileUserAgent || isMobileViewport;
+    const isMobile = isMobileUserAgent || isMobileViewport;
+    console.log('🔍 Detección de dispositivo:', {
+      userAgent: window.navigator.userAgent,
+      viewport: window.innerWidth,
+      isMobileUserAgent,
+      isMobileViewport,
+      isMobile
+    });
+    return isMobile;
   };
 
   const signInWithGoogle = async () => {
     try {
-      if (isMobileDevice()) {
-        // Usar redirect para dispositivos móviles
-        await signInWithRedirect(auth, googleProvider);
+      console.log('🚀 Iniciando autenticación con Google...');
+      
+      const isMobile = isMobileDevice();
+      
+      if (isMobile) {
+        console.log('📱 Usando redirect para dispositivo móvil');
+        console.log('🔄 Configurando redirect...');
+        
+        // Configurar el provider con parámetros específicos para móvil
+        googleProvider.setCustomParameters({
+          prompt: 'select_account',
+          display: 'popup' // Intentar popup primero en móvil
+        });
+        
+        try {
+          // Intentar popup primero en móvil
+          console.log('📱 Intentando popup en móvil...');
+          const result = await signInWithPopup(auth, googleProvider);
+          console.log('✅ Autenticación con popup exitosa en móvil:', result.user.uid);
+          return;
+        } catch (popupError: any) {
+          console.log('⚠️ Popup falló en móvil, usando redirect:', popupError.code);
+          
+          // Si el popup falla, usar redirect
+          if (popupError.code === 'auth/popup-blocked' || 
+              popupError.code === 'auth/popup-closed-by-user' ||
+              popupError.code === 'auth/cancelled-popup-request') {
+            console.log('🔄 Cambiando a redirect en móvil...');
+            await signInWithRedirect(auth, googleProvider);
+            return;
+          } else {
+            throw popupError;
+          }
+        }
       } else {
-        // Usar popup para desktop
-        await signInWithPopup(auth, googleProvider);
+        console.log('💻 Usando popup para desktop');
+        const result = await signInWithPopup(auth, googleProvider);
+        console.log('✅ Autenticación con popup exitosa:', result.user.uid);
       }
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
+    } catch (error: any) {
+      console.error('❌ Error signing in with Google:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
       throw error;
     }
   };
@@ -65,21 +107,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    // Manejar el resultado del redirect al cargar la página
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          console.log('✅ Autenticación por redirect exitosa:', result.user.uid);
-        }
-      } catch (error) {
-        console.error('❌ Error en autenticación por redirect:', error);
+    // Manejar resultado de redirect al cargar la página
+  const handleRedirectResult = async () => {
+    try {
+      console.log('🔄 Verificando resultado de redirect...');
+      const result = await getRedirectResult(auth);
+      if (result) {
+        console.log('✅ Autenticación por redirect exitosa:', result.user.uid);
+        console.log('👤 Usuario autenticado:', {
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName
+        });
+      } else {
+        console.log('ℹ️ No hay resultado de redirect pendiente');
       }
-    };
+    } catch (error) {
+      console.error('❌ Error en autenticación por redirect:', error);
+      console.error('Error code:', (error as any)?.code);
+      console.error('Error message:', (error as any)?.message);
+    }
+  };
 
     handleRedirectResult();
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('🔄 Estado de autenticación cambió:', user ? `Usuario: ${user.uid}` : 'No hay usuario');
+      
+      // Establecer el usuario inmediatamente
       setCurrentUser(user);
       
       if (user) {
@@ -104,9 +159,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         } catch (error) {
           console.error('❌ Error al crear/verificar usuario en Firestore:', error);
+          // No impedir que el usuario continúe aunque falle Firestore
+          console.log('⚠️ Continuando con la autenticación a pesar del error en Firestore');
         }
       }
       
+      // Siempre establecer loading como false al final
+      console.log('✅ Estableciendo loading como false');
       setLoading(false);
     });
 

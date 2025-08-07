@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslations } from '../utils/i18n';
 import './Login.css';
 
 const Login: React.FC = () => {
   const { signInWithGoogle } = useAuth();
+  const t = useTranslations();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -17,15 +19,15 @@ const Login: React.FC = () => {
       
       // Manejar errores específicos
       if (error.code === 'auth/popup-closed-by-user') {
-        setError('Ventana de autenticación cerrada. Intenta nuevamente.');
+        setError(t.authPopupClosed);
       } else if (error.code === 'auth/popup-blocked') {
-        setError('Popup bloqueado por el navegador. Permite popups para este sitio.');
+        setError(t.authPopupBlocked);
       } else if (error.code === 'auth/cancelled-popup-request') {
-        setError('Solicitud de autenticación cancelada.');
+        setError(t.authCancelled);
       } else if (error.code === 'auth/network-request-failed') {
-        setError('Error de conexión. Verifica tu internet.');
+        setError(t.authNetworkError);
       } else {
-        setError('Error al iniciar sesión con Google. Intenta nuevamente.');
+        setError(t.authGenericError);
       }
     } finally {
       setLoading(false);
@@ -38,8 +40,8 @@ const Login: React.FC = () => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>Family Order</h1>
-          <p>Organiza tus menús, rutinas y presupuesto familiar</p>
+          <h1>{t.loginTitle}</h1>
+          <p>{t.loginSubtitle}</p>
         </div>
         
         {error && (
@@ -60,14 +62,14 @@ const Login: React.FC = () => {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            {loading ? 'Iniciando sesión...' : 'Continuar con Google'}
+            {loading ? t.signingIn : t.continueWithGoogle}
           </button>
           
 
         </div>
         
         <div className="login-footer">
-          <p>Al continuar, aceptas nuestros términos de servicio y política de privacidad</p>
+          <p>{t.loginFooter}</p>
         </div>
       </div>
     </div>

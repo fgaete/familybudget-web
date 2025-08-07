@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { searchLiderProducts, LiderProduct, formatChileanPrice } from '../services/liderScraper';
+import { useTranslations } from '../utils/i18n';
 import './ProductSearch.css';
 
 export interface MenuProduct {
@@ -19,6 +20,7 @@ interface ProductSearchProps {
 }
 
 const ProductSearch: React.FC<ProductSearchProps> = ({ onAddProduct, allowDecimalQuantity = false }) => {
+  const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<LiderProduct[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -91,14 +93,14 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ onAddProduct, allowDecima
   return (
     <div className="product-search">
       <div className="search-section">
-        <h3>Buscar Productos</h3>
+        <h3>{t.searchProducts}</h3>
         <div className="search-input-group">
-          <input
-            type="text"
+          <input 
+            type="text" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Buscar productos (ej: pollo, arroz, pan)..."
+            placeholder={t.searchPlaceholder}
             className="search-input"
           />
           <button 
@@ -106,14 +108,14 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ onAddProduct, allowDecima
             disabled={isLoading || !searchQuery.trim()}
             className="search-button"
           >
-            {isLoading ? 'Buscando...' : 'Buscar'}
+            {isLoading ? t.searching : t.search}
           </button>
         </div>
       </div>
 
       {searchResults.length > 0 && (
         <div className="results-section">
-          <h4>Resultados de búsqueda ({searchResults.length})</h4>
+          <h4>{t.searchResults} ({searchResults.length})</h4>
           <div className="products-grid">
             {searchResults.map((product, index) => {
               const quantity = selectedProducts.get(product.name) || 1;
@@ -124,7 +126,7 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ onAddProduct, allowDecima
                   <div className="product-info">
                     <h5 className="product-name">{product.name}</h5>
                     {product.brand && (
-                      <p className="product-brand">Marca: {product.brand}</p>
+                      <p className="product-brand">{t.brand}: {product.brand}</p>
                     )}
                     <p className="product-store">🏪 {product.store}</p>
                     <p className="product-category">{product.category}</p>
@@ -133,7 +135,7 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ onAddProduct, allowDecima
                     </p>
                     
                     <div className="quantity-controls">
-                      <label>Cantidad:</label>
+                      <label>{t.quantity}:</label>
                       <div className="quantity-input-group">
                         <button 
                           onClick={() => handleQuantityChange(product.name, quantity - (allowDecimalQuantity ? 0.1 : 1))}
@@ -159,7 +161,7 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ onAddProduct, allowDecima
                     </div>
                     
                     <div className="total-price">
-                      <strong>Total: {formatChileanPrice(totalPrice)}</strong>
+                      <strong>{t.total}: {formatChileanPrice(totalPrice)}</strong>
                     </div>
                   </div>
                   
@@ -168,7 +170,7 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ onAddProduct, allowDecima
                     className="add-product-btn"
                     disabled={!product.availability}
                   >
-                    {product.availability ? 'Agregar al Menú' : 'No Disponible'}
+                    {product.availability ? t.addToMenu : t.notAvailable}
                   </button>
                 </div>
               );
@@ -179,8 +181,8 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ onAddProduct, allowDecima
       
       {searchQuery && searchResults.length === 0 && !isLoading && (
         <div className="no-results">
-          <p>No se encontraron productos para "{searchQuery}"</p>
-          <p>Intenta con términos como: pollo, arroz, pan, leche, huevos</p>
+          <p>{t.noResults} "{searchQuery}"</p>
+          <p>{t.noResultsDescription}</p>
         </div>
       )}
     </div>
