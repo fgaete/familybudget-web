@@ -167,8 +167,8 @@ export interface Translations {
 const translations: Record<string, Translations> = {
   es: {
     // App general
-    appTitle: 'MiPresupuesto',
-    appSubtitle: 'Gestiona tu presupuesto personal y controla tus gastos',
+    appTitle: 'GastosInteligentes',
+    appSubtitle: 'Gestión inteligente de gastos con categorización automática',
     loading: 'Cargando...',
     
     // Navigation
@@ -230,13 +230,13 @@ const translations: Record<string, Translations> = {
     
     // Welcome screen
     getStarted: 'Comenzar',
-    visualBudget: 'Presupuesto Visual',
-    visualBudgetDesc: 'Visualiza tus gastos con gráficos interactivos y mantén el control de tu presupuesto personal.',
-    smartTracking: 'Seguimiento Inteligente',
-    smartTrackingDesc: 'Registra y categoriza tus gastos automáticamente para un mejor control financiero.',
-    personalPlanning: 'Planificación Personal',
-  personalPlanningDesc: 'Planifica tus compras y gastos personales, mantén el control de tus finanzas.',
-    ctaDescription: 'Únete a miles de personas que ya gestionan su presupuesto de manera inteligente',
+    visualBudget: 'Categorización Automática',
+    visualBudgetDesc: 'Escribe "Almuerzo con amigos" y el sistema automáticamente lo categoriza como "Almuerzo". ¡Sin complicaciones!',
+    smartTracking: 'Aprendizaje Inteligente',
+    smartTrackingDesc: 'El sistema aprende de tus selecciones y mejora la precisión de categorización con cada uso.',
+    personalPlanning: 'Gestión Simplificada',
+  personalPlanningDesc: 'Registra gastos en texto libre y deja que la inteligencia artificial se encargue del resto.',
+    ctaDescription: 'Únete a la revolución de la gestión inteligente de gastos personales',
     
     // Categories
     housing: 'Vivienda',
@@ -329,8 +329,8 @@ const translations: Record<string, Translations> = {
   
   en: {
     // App general
-    appTitle: 'MyBudget',
-    appSubtitle: 'Manage your personal budget and control your expenses',
+    appTitle: 'SmartExpenses',
+    appSubtitle: 'Intelligent expense management with automatic categorization',
     loading: 'Loading...',
     
     // Navigation
@@ -392,13 +392,13 @@ const translations: Record<string, Translations> = {
     
     // Welcome screen
     getStarted: 'Get Started',
-    visualBudget: 'Visual Budget',
-    visualBudgetDesc: 'Visualize your expenses with interactive charts and keep control of your personal budget.',
-    smartTracking: 'Smart Tracking',
-    smartTrackingDesc: 'Record and categorize your expenses automatically for better financial control.',
-    personalPlanning: 'Personal Planning',
-  personalPlanningDesc: 'Plan your personal purchases and expenses, keep control of your finances.',
-    ctaDescription: 'Join thousands of people who already manage their budget intelligently',
+    visualBudget: 'Automatic Categorization',
+    visualBudgetDesc: 'Type "Lunch with friends" and the system automatically categorizes it as "Lunch". No complications!',
+    smartTracking: 'Intelligent Learning',
+    smartTrackingDesc: 'The system learns from your selections and improves categorization accuracy with each use.',
+    personalPlanning: 'Simplified Management',
+  personalPlanningDesc: 'Record expenses in free text and let artificial intelligence handle the rest.',
+    ctaDescription: 'Join the revolution of intelligent personal expense management',
     
     // Categories
     housing: 'Housing',

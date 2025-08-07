@@ -213,11 +213,29 @@ function AppContent() {
   const addTransaction = async (description: string, amount: number, category: string) => {
     if (!currentUser) return;
     
+    // Importar la función de categorización inteligente
+    const { detectCategory, learnFromUserSelection } = await import('./utils/smartCategorization');
+    
+    // Si no se seleccionó categoría, intentar detectarla automáticamente
+    let finalCategory = category;
+    if (!category || category === '') {
+      const detectedCategory = detectCategory(description, userData?.categories || []);
+      if (detectedCategory) {
+        finalCategory = detectedCategory;
+        console.log(`🤖 Categoría detectada automáticamente: "${description}" → ${detectedCategory}`);
+      } else {
+        finalCategory = 'Otros'; // Categoría por defecto
+      }
+    } else {
+      // Si el usuario seleccionó manualmente una categoría, aprender de esa selección
+      learnFromUserSelection(description, category);
+    }
+    
     const purchase = {
       id: Date.now().toString(),
       name: description,
       amount,
-      category: 'compras' as const,
+      category: finalCategory,
       date: Timestamp.now()
     };
     
@@ -501,7 +519,7 @@ function AppContent() {
 
             <div className="add-form">
               <h3>{t.variableExpenses}</h3>
-              <p>Registra aquí gastos ocasionales que no están incluidos en compras o menús</p>
+              <p>Registra aquí gastos ocasionales. 🤖 <strong>¡Novedad!</strong> Si no seleccionas categoría, la detectaremos automáticamente según tu descripción.</p>
               <form onSubmit={(e) => {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;
@@ -513,10 +531,10 @@ function AppContent() {
                 );
                 form.reset();
               }}>
-                <input name="description" placeholder={t.expenseDescription} required />
+                <input name="description" placeholder="Ej: Almuerzo con amigos, Uber al trabajo, etc." required />
                 <input name="amount" type="number" placeholder={t.amount} required />
-                <select name="category" required>
-                  <option value="">Seleccionar categoría</option>
+                <select name="category">
+                  <option value="">🤖 Detectar categoría automáticamente</option>
                   {userData?.categories && userData.categories.length > 0 ? (
                     userData.categories.map(category => (
                       <option key={category.id} value={category.name}>

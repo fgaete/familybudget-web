@@ -75,9 +75,10 @@ export interface Purchase {
   id: string;
   name: string;
   amount: number;
-  category: 'compras' | 'menu';
+  category: string; // Ahora permite cualquier categoría definida por el usuario
   date: Timestamp;
   menuId?: string; // si la compra es de un menú
+  isMenuPurchase?: boolean; // para distinguir compras de menú de gastos variables
 }
 
 class UserService {
@@ -378,9 +379,10 @@ class UserService {
       id: `purchase_${Date.now()}`,
       name: `Menú: ${menu.name}`,
       amount: menu.totalCost,
-      category: 'menu',
+      category: 'Menú',
       date: Timestamp.now(),
-      menuId: menuId
+      menuId: menuId,
+      isMenuPurchase: true
     };
 
     await this.addPurchase(uid, purchase);
