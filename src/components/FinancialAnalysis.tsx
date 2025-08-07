@@ -1,5 +1,7 @@
 import React from 'react';
 import { useTranslations, formatPrice } from '../utils/i18n';
+import PremiumFeature from './PremiumFeature';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 interface Expense {
   name?: string;
@@ -20,6 +22,7 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
   variableExpenses
 }) => {
   const t = useTranslations();
+  const { isPremium } = useSubscription();
 
   // Calculate financial metrics
   const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -73,43 +76,48 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
       </div>
 
       <div className="analysis-grid">
-        {/* Key Metrics */}
-        <div className="metric-card">
-          <h3>{t.budgetEfficiency}</h3>
-          <div className="metric-value">
-            <span className="percentage">{budgetUtilization.toFixed(1)}%</span>
-            <div className="progress-bar">
-              <div 
-                className="progress-fill" 
-                style={{ 
-                  width: `${Math.min(budgetUtilization, 100)}%`,
-                  backgroundColor: budgetUtilization > 100 ? '#EF4444' : '#3B82F6'
-                }}
-              ></div>
+        {/* Premium Budget Metrics */}
+        <PremiumFeature title="Métricas de Presupuesto">
+          <div className="metric-card">
+            <h3>{t.budgetEfficiency}</h3>
+            <div className="metric-value">
+              <span className="percentage">{budgetUtilization.toFixed(1)}%</span>
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill" 
+                  style={{ 
+                    width: `${Math.min(budgetUtilization, 100)}%`,
+                    backgroundColor: budgetUtilization > 100 ? '#EF4444' : '#3B82F6'
+                  }}
+                ></div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="metric-card">
-          <h3>{t.savingsRate}</h3>
-          <div className="metric-value">
-            <span className="percentage" style={{ color: healthStatus.color }}>
-              {savingsRate.toFixed(1)}%
-            </span>
-            <div className="metric-amount">
-              {formatPrice(remainingBudget)}
+          <div className="metric-card">
+            <h3>{t.savingsRate}</h3>
+            <div className="metric-value">
+              <span className="percentage" style={{ color: healthStatus.color }}>
+                {savingsRate.toFixed(1)}%
+              </span>
+              <div className="metric-amount">
+                {formatPrice(remainingBudget)}
+              </div>
             </div>
           </div>
-        </div>
+        </PremiumFeature>
 
+        {/* Basic Expense Analysis - Always Available */}
         <div className="metric-card">
           <h3>{t.averageMonthlyExpenses}</h3>
           <div className="metric-value">
             <span className="amount">{formatPrice(totalExpenses)}</span>
-            <div className="breakdown">
-              <span>{t.fixed}: {formatPrice(totalFixedExpenses)}</span>
-              <span>{t.variable}: {formatPrice(totalVariableExpenses)}</span>
-            </div>
+            {isPremium && (
+              <div className="breakdown">
+                <span>{t.fixed}: {formatPrice(totalFixedExpenses)}</span>
+                <span>{t.variable}: {formatPrice(totalVariableExpenses)}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -143,34 +151,36 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
 
 
 
-        {/* Projections */}
-        <div className="projections-card">
-          <h3>{t.projections}</h3>
-          <div className="projection-items">
-            <div className="projection-item">
-              <span className="projection-label">{t.nextMonthProjection}</span>
-              <span className="projection-value">{formatPrice(nextMonthProjection)}</span>
-            </div>
-            <div className="projection-item">
-              <span className="projection-label">{t.recommendedSavings}</span>
-              <span className="projection-value">{formatPrice(recommendedSavings)}</span>
-            </div>
-            {sortedCategories.length > 0 && (
-              <>
-                <div className="projection-item">
-                  <span className="projection-label">{t.highestExpenseCategory}</span>
-                  <span className="projection-value">{sortedCategories[0][0]}</span>
-                </div>
-                {sortedCategories.length > 1 && (
+        {/* Premium Projections */}
+        <PremiumFeature title="Proyecciones y Recomendaciones">
+          <div className="projections-card">
+            <h3>{t.projections}</h3>
+            <div className="projection-items">
+              <div className="projection-item">
+                <span className="projection-label">{t.nextMonthProjection}</span>
+                <span className="projection-value">{formatPrice(nextMonthProjection)}</span>
+              </div>
+              <div className="projection-item">
+                <span className="projection-label">{t.recommendedSavings}</span>
+                <span className="projection-value">{formatPrice(recommendedSavings)}</span>
+              </div>
+              {sortedCategories.length > 0 && (
+                <>
                   <div className="projection-item">
-                    <span className="projection-label">{t.lowestExpenseCategory}</span>
-                    <span className="projection-value">{sortedCategories[sortedCategories.length - 1][0]}</span>
+                    <span className="projection-label">{t.highestExpenseCategory}</span>
+                    <span className="projection-value">{sortedCategories[0][0]}</span>
                   </div>
-                )}
-              </>
-            )}
+                  {sortedCategories.length > 1 && (
+                    <div className="projection-item">
+                      <span className="projection-label">{t.lowestExpenseCategory}</span>
+                      <span className="projection-value">{sortedCategories[sortedCategories.length - 1][0]}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        </PremiumFeature>
 
         {/* Monthly Trends Placeholder */}
         <div className="trends-card">

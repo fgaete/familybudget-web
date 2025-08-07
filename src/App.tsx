@@ -57,6 +57,10 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<TabType>('budget');
   const [editingBudgetItem, setEditingBudgetItem] = useState<any>(null);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
   
 
 
@@ -64,7 +68,7 @@ function AppContent() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   // Removed shoppingItems state as shopping functionality is eliminated
   const [monthlyBudget, setMonthlyBudget] = useState(0);
-  const [remainingBudget, setRemainingBudget] = useState(0);
+
 
   // Cargar datos del usuario
   useEffect(() => {
@@ -100,8 +104,7 @@ function AppContent() {
           })) || []);
           setMonthlyBudget(user.monthlyBudget);
           
-          const remaining = await userService.getRemainingBudget(currentUser.uid);
-          setRemainingBudget(remaining);
+
           
           // Mostrar configuración de presupuesto si no está configurado
           if (user.monthlyBudget === 0) {
@@ -161,8 +164,7 @@ function AppContent() {
               date: p.date.toDate().toLocaleDateString('es-CL')
             })) || []);
             
-            const remaining = await userService.getRemainingBudget(currentUser.uid);
-            setRemainingBudget(remaining);
+
           }
         }}
       />
@@ -198,8 +200,7 @@ function AppContent() {
       setTransactions([...transactions, newTransaction]);
       
       // Actualizar presupuesto restante
-      const remaining = await userService.getRemainingBudget(currentUser.uid);
-      setRemainingBudget(remaining);
+
       
     } catch (error) {
       console.error('Error adding transaction:', error);
@@ -212,8 +213,8 @@ function AppContent() {
   // Functions to generate chart data
   const getBudgetOverviewData = () => {
     const fixedExpenses = userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0;
-    const variableExpenses = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
-    const remaining = remainingBudget;
+    const variableExpenses = filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+    const remaining = Math.max(0, monthlyBudget - fixedExpenses - variableExpenses);
     
     return [
       { name: 'Gastos Fijos', value: fixedExpenses, color: '#FF6B6B' },
@@ -240,7 +241,7 @@ function AppContent() {
 
   const getVariableExpensesData = () => {
     const categoryTotals: { [key: string]: number } = {};
-    transactions.forEach(transaction => {
+    filteredTransactions.forEach(transaction => {
       categoryTotals[transaction.category] = (categoryTotals[transaction.category] || 0) + transaction.amount;
     });
     
@@ -276,8 +277,7 @@ function AppContent() {
       if (user) {
         setUserData(user);
         // Actualizar presupuesto restante
-        const remaining = await userService.getRemainingBudget(currentUser.uid);
-        setRemainingBudget(remaining);
+
       }
     } catch (error) {
       console.error('Error adding budget item:', error);
@@ -295,8 +295,7 @@ function AppContent() {
       const user = await userService.getUser(currentUser.uid);
       if (user) {
         setUserData(user);
-        const remaining = await userService.getRemainingBudget(currentUser.uid);
-        setRemainingBudget(remaining);
+
       }
       setEditingBudgetItem(null);
     } catch (error) {
@@ -316,8 +315,7 @@ function AppContent() {
         const user = await userService.getUser(currentUser.uid);
         if (user) {
           setUserData(user);
-          const remaining = await userService.getRemainingBudget(currentUser.uid);
-          setRemainingBudget(remaining);
+
         }
       } catch (error) {
         console.error('Error deleting budget item:', error);
@@ -349,8 +347,7 @@ function AppContent() {
       setTransactions(updatedTransactions);
       
       // Actualizar presupuesto restante
-      const remaining = await userService.getRemainingBudget(currentUser.uid);
-      setRemainingBudget(remaining);
+      
       
       setEditingTransaction(null);
     } catch (error) {
@@ -371,10 +368,6 @@ function AppContent() {
         const updatedTransactions = transactions.filter(t => t.id !== transactionId);
         setTransactions(updatedTransactions);
         
-        // Actualizar presupuesto restante
-        const remaining = await userService.getRemainingBudget(currentUser.uid);
-        setRemainingBudget(remaining);
-        
       } catch (error) {
         console.error('Error deleting transaction:', error);
           alert(t.errorDeletingTransaction);
@@ -386,7 +379,15 @@ function AppContent() {
 
 
 
-  const budgetUsedPercentage = monthlyBudget > 0 ? ((monthlyBudget - remainingBudget) / monthlyBudget) * 100 : 0;
+  // Filter transactions by selected month
+  const filteredTransactions = transactions.filter(transaction => {
+    const transactionDate = new Date(transaction.date.split('/').reverse().join('-')); // Convert DD/MM/YYYY to YYYY-MM-DD
+    const transactionMonth = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`;
+    return transactionMonth === selectedMonth;
+  });
+
+  const totalUsedBudget = (userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0) + filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const budgetUsedPercentage = monthlyBudget > 0 ? (totalUsedBudget / monthlyBudget) * 100 : 0;
 
   return (
     <div className="App">
@@ -420,23 +421,26 @@ function AppContent() {
               />
             )}
             <span className="user-name">{currentUser?.displayName}</span>
-            <div className="budget-indicator">
-              <span className="budget-text">
-                {formatPrice(remainingBudget)} / {formatPrice(monthlyBudget)}
-              </span>
-              <div className="budget-bar">
-                <div 
-                  className="budget-fill" 
-                  style={{ width: `${Math.min(budgetUsedPercentage, 100)}%` }}
-                ></div>
-              </div>
-            </div>
             <button className="logout-btn" onClick={logout}>
               Cerrar Sesión
             </button>
           </div>
         </div>
       </header>
+
+      {/* Month Selector */}
+      <div className="month-selector-container">
+        <div className="month-selector">
+          <label htmlFor="month-select">📅 Seleccionar Mes:</label>
+          <input
+            id="month-select"
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="month-input"
+          />
+        </div>
+      </div>
 
       <main className="main-content">
 
@@ -447,8 +451,8 @@ function AppContent() {
             <PremiumFeature className="summary-card" title="Resumen de Presupuesto Mensual">
               <h3>{t.monthlyBudget}</h3>
               <p>{t.monthlyBudget}: {formatPrice(monthlyBudget)}</p>
-              <p>{t.usedBudget}: {formatPrice(monthlyBudget - remainingBudget)}</p>
-              <p>{t.remainingBudget}: {formatPrice(remainingBudget)}</p>
+              <p>{t.usedBudget}: {formatPrice((userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0) + filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0))}</p>
+              <p>{t.remainingBudget}: {formatPrice(Math.max(0, monthlyBudget - (userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0) - filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0)))}</p>
               <div className="budget-bar">
                 <div 
                   className="budget-progress" 
@@ -575,7 +579,7 @@ function AppContent() {
               <div className="budget-section">
                 <h3>💸 Gastos Variables</h3>
                 <div className="items-list">
-                  {transactions.map(transaction => (
+                  {filteredTransactions.map(transaction => (
                     <div key={transaction.id} className="item-card">
                       <div className="item-content">
                         <h4>{transaction.description}</h4>
@@ -603,7 +607,7 @@ function AppContent() {
                   ))}
                 </div>
                 <div className="budget-summary">
-                  <p><strong>Total Gastos Variables: ${transactions.reduce((sum, transaction) => sum + transaction.amount, 0).toLocaleString('es-CL')}</strong></p>
+                  <p><strong>Total Gastos Variables: ${filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0).toLocaleString('es-CL')}</strong></p>
                 </div>
               </div>
             )}
@@ -697,13 +701,11 @@ function AppContent() {
         )}
 
         {activeTab === 'analysis' && (
-          <PremiumFeature title="Análisis Financiero Avanzado">
-            <FinancialAnalysis
-              monthlyBudget={monthlyBudget}
-              fixedExpenses={userData?.budgetItems || []}
-              variableExpenses={transactions}
-            />
-          </PremiumFeature>
+          <FinancialAnalysis
+            monthlyBudget={monthlyBudget}
+            fixedExpenses={userData?.budgetItems || []}
+            variableExpenses={filteredTransactions}
+          />
         )}
 
       </main>
