@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import Welcome from './components/Welcome';
 import Login from './components/Login';
+import CategorySetup from './components/CategorySetup';
 import BudgetSetup from './components/BudgetSetup';
 import FinancialAnalysis from './components/FinancialAnalysis';
 import PremiumModal from './components/PremiumModal';
@@ -12,7 +13,6 @@ import PremiumFeature from './components/PremiumFeature';
 // import { formatChileanPrice } from './services/liderScraper'; // Replaced by formatPrice from i18n
 import { userService, UserData } from './services/userService';
 import { useTranslations, formatPrice } from './utils/i18n';
-import { useSubscription } from './contexts/SubscriptionContext';
 import { Timestamp } from 'firebase/firestore';
 import './App.css';
 
@@ -45,10 +45,10 @@ function App() {
 // Componente de contenido principal
 function AppContent() {
   const { currentUser, logout } = useAuth();
-  const { isPremium } = useSubscription();
   const t = useTranslations();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showCategorySetup, setShowCategorySetup] = useState(false);
   const [showBudgetSetup, setShowBudgetSetup] = useState(false);
   const [showWelcome, setShowWelcome] = useState(() => {
     // Solo mostrar welcome si el usuario nunca la ha visto
@@ -106,8 +106,11 @@ function AppContent() {
           
 
           
-          // Mostrar configuración de presupuesto si no está configurado
-          if (user.monthlyBudget === 0) {
+          // Mostrar configuración de categorías si no están configuradas
+          if (!user.categories || user.categories.length === 0) {
+            setShowCategorySetup(true);
+          } else if (user.monthlyBudget === 0) {
+            // Mostrar configuración de presupuesto si no está configurado
             setShowBudgetSetup(true);
           }
         }
@@ -139,6 +142,26 @@ function AppContent() {
         <div className="loading-spinner"></div>
         <p>{t.loading}</p>
       </div>
+    );
+  }
+
+  // Si necesita configurar categorías, mostrar setup de categorías
+  if (showCategorySetup) {
+    return (
+      <CategorySetup 
+        onComplete={async () => {
+          setShowCategorySetup(false);
+          // Recargar datos del usuario
+          const user = await userService.getUser(currentUser.uid);
+          if (user) {
+            setUserData(user);
+            // Verificar si necesita configurar presupuesto
+            if (user.monthlyBudget === 0) {
+              setShowBudgetSetup(true);
+            }
+          }
+        }}
+      />
     );
   }
 
@@ -476,16 +499,12 @@ function AppContent() {
                 <input name="amount" type="number" placeholder={t.amount} required />
                 <select name="category" required>
                   <option value="">Seleccionar categoría</option>
-                  {isPremium ? (
-                    <>
-                      <option value="Alimentación">Alimentación</option>
-                      <option value="Transporte">Transporte</option>
-                      <option value="Entretenimiento">Entretenimiento</option>
-                      <option value="Salud">Salud</option>
-                      <option value="Educación">Educación</option>
-                      <option value="Ropa">Ropa</option>
-                      <option value="Otros">Otros</option>
-                    </>
+                  {userData?.categories && userData.categories.length > 0 ? (
+                    userData.categories.map(category => (
+                      <option key={category.id} value={category.name}>
+                        {category.icon} {category.name}
+                      </option>
+                    ))
                   ) : (
                     <option value="Otros">Otros</option>
                   )}

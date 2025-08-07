@@ -9,6 +9,13 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
+export interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}
+
 export interface UserData {
   uid: string;
   email: string;
@@ -17,6 +24,7 @@ export interface UserData {
   monthlyBudget: number;
   currentMonthSpent: number;
   budgetMonth: string; // formato: "2024-01"
+  categories: Category[];
   menus: Menu[];
   routines: Routine[];
   budgetItems: BudgetItem[];
@@ -90,6 +98,7 @@ class UserService {
       monthlyBudget: 0,
       currentMonthSpent: 0,
       budgetMonth: currentMonth,
+      categories: [],
       menus: [],
       routines: [],
       budgetItems: [],
@@ -389,6 +398,14 @@ class UserService {
     }
 
     return user.monthlyBudget - user.currentMonthSpent;
+  }
+
+  async updateUserCategories(uid: string, categories: Category[]): Promise<void> {
+    const userRef = this.getUserRef(uid);
+    await updateDoc(userRef, {
+      categories: categories,
+      updatedAt: Timestamp.now()
+    });
   }
 }
 
