@@ -121,10 +121,8 @@ function AppContent() {
           // Mostrar configuración de categorías si no están configuradas
           if (!user.categories || user.categories.length === 0) {
             setShowCategorySetup(true);
-          } else if (user.monthlyBudget === 0) {
-            // Mostrar configuración de presupuesto si no está configurado
-            setShowBudgetSetup(true);
           }
+          // El presupuesto ahora es opcional - no forzar su configuración
         }
       } catch (error) {
         console.error('Error loading user data:', error);
@@ -167,10 +165,7 @@ function AppContent() {
           const user = await userService.getUser(currentUser.uid);
           if (user) {
             setUserData(user);
-            // Verificar si necesita configurar presupuesto
-            if (user.monthlyBudget === 0) {
-              setShowBudgetSetup(true);
-            }
+            // El presupuesto es opcional - no forzar su configuración
           }
         }}
       />
@@ -346,20 +341,24 @@ function AppContent() {
         id: updatedTransaction.id,
         name: updatedTransaction.description,
         amount: updatedTransaction.amount,
-        category: 'compras' as const,
+        category: updatedTransaction.category, // Usar la categoría actualizada
         date: Timestamp.now()
       };
       
       await userService.updatePurchase(currentUser.uid, purchase);
       
-      // Actualizar estado local
-      const updatedTransactions = transactions.map(t => 
-        t.id === updatedTransaction.id ? updatedTransaction : t
-      );
-      setTransactions(updatedTransactions);
-      
-      // Actualizar presupuesto restante
-      
+      // Recargar datos del usuario para actualizar la interfaz
+      const user = await userService.getUser(currentUser.uid);
+      if (user) {
+        setUserData(user);
+        setTransactions(user.purchases?.map(p => ({
+          id: p.id,
+          description: p.name,
+          amount: p.amount,
+          category: p.category,
+          date: p.date.toDate().toLocaleDateString('es-CL')
+        })) || []);
+      }
       
       setEditingTransaction(null);
     } catch (error) {
@@ -393,9 +392,36 @@ function AppContent() {
 
   // Filter transactions by selected month
   const filteredTransactions = transactions.filter(transaction => {
-    const transactionDate = new Date(transaction.date.split('/').reverse().join('-')); // Convert DD/MM/YYYY to YYYY-MM-DD
-    const transactionMonth = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`;
-    return transactionMonth === selectedMonth;
+    try {
+      // Handle Chilean date format DD/MM/YYYY
+      let transactionDate;
+      if (transaction.date.includes('/')) {
+        const parts = transaction.date.split('/');
+        if (parts.length === 3) {
+          // Convert DD/MM/YYYY to YYYY-MM-DD for proper Date parsing
+          const day = parts[0].padStart(2, '0');
+          const month = parts[1].padStart(2, '0');
+          const year = parts[2];
+          transactionDate = new Date(`${year}-${month}-${day}`);
+        } else {
+          transactionDate = new Date(transaction.date);
+        }
+      } else {
+        transactionDate = new Date(transaction.date);
+      }
+      
+      // Check if date is valid
+      if (isNaN(transactionDate.getTime())) {
+        console.warn('Invalid date format:', transaction.date);
+        return false;
+      }
+      
+      const transactionMonth = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`;
+      return transactionMonth === selectedMonth;
+    } catch (error) {
+      console.error('Error filtering transaction:', error, transaction);
+      return false;
+    }
   });
 
   const totalUsedBudget = (userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0) + filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
