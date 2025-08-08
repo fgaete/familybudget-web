@@ -169,7 +169,8 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
     <div className="financial-analysis">
       <div className="analysis-header">
         <h2>Análisis Financiero</h2>
-        <div className="health-indicator">
+        {/* Salud Financiera oculta - no aplicable cuando solo se registran gastos */}
+        {/* <div className="health-indicator">
           <span className="health-label">Salud Financiera:</span>
           <span 
             className="health-status" 
@@ -177,7 +178,7 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
           >
             {healthStatus.status}
           </span>
-        </div>
+        </div> */}
       </div>
 
       <div className="analysis-grid">

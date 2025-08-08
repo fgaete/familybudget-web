@@ -23,10 +23,24 @@ const categoryKeywords: Record<string, string[]> = {
     'mecánico', 'taller', 'neumáticos', 'ruedas', 'aceite', 'revisión',
     'permiso', 'circulación', 'seguro auto', 'auto', 'coche', 'vehículo',
     'viaje', 'pasaje', 'boleto', 'ticket', 'transporte público',
-    'cabify', 'didi', 'beat', 'transantiago', 'red metropolitana',
-    'tarjeta bip', 'bip', 'recarga bip', 'locomoción',
-    'mantención auto', 'reparación auto', 'lavado auto',
-    'autopista', 'tag', 'telepeaje', 'copec', 'shell', 'petrobras'
+    'cabify', 'didi', 'beat', 'lyft', 'transantiago', 'red metropolitana',
+    'tarjeta bip', 'bip', 'recarga bip', 'locomoción', 'movilización',
+    'mantención auto', 'reparación auto', 'lavado auto', 'car wash',
+    'autopista', 'tag', 'telepeaje', 'copec', 'shell', 'petrobras',
+    'esso', 'terpel', 'enex', 'estación de servicio', 'bencinera',
+    'diesel', 'petróleo', 'lubricante', 'filtro', 'batería auto',
+    'frenos', 'embrague', 'transmisión', 'motor', 'radiador',
+    'parabrisas', 'limpia parabrisas', 'luces auto', 'faro', 'baliza',
+    'matricula', 'patente', 'registro', 'inspección técnica', 'planta',
+    'grúa', 'remolque', 'auxilio mecánico', 'seguro obligatorio',
+    'soap', 'revisión técnica', 'emisión de gases', 'smog',
+    'transporte escolar', 'furgón escolar', 'colectivo escolar',
+    'avión', 'vuelo', 'aeropuerto', 'pasaje aéreo', 'equipaje',
+    'tren', 'ferrocarril', 'efe', 'metrotren', 'biotren',
+    'barco', 'ferry', 'lancha', 'transporte marítimo',
+    'bicicleta', 'bike', 'ciclovía', 'repuestos bici', 'neumático bici',
+    'scooter', 'patineta', 'skateboard', 'patines', 'monopatín',
+    'moto', 'motocicleta', 'scooter eléctrico', 'bici eléctrica'
    ],
    'Entretenimiento': [
     'cine', 'película', 'teatro', 'concierto', 'show', 'espectáculo',
@@ -107,19 +121,44 @@ const categoryKeywords: Record<string, string[]> = {
  * @returns La categoría detectada o null si no se encuentra coincidencia
  */
 export function detectCategory(description: string, userCategories: Category[]): string | null {
-  if (!description || !userCategories.length) return null;
+  if (!description) return null;
   
   const normalizedDescription = description.toLowerCase().trim();
   
-  // Buscar coincidencias para cada categoría del usuario
-  for (const category of userCategories) {
-    const categoryNameLower = category.name.toLowerCase();
-    
-    // Buscar palabras clave para esta categoría
-    const keywords = categoryKeywords[category.name] || [];
-    
-    // Agregar el nombre de la categoría como palabra clave
-    const allKeywords = [categoryNameLower, ...keywords.map(k => k.toLowerCase())];
+  // Si hay categorías de usuario, buscar coincidencias con ellas
+  if (userCategories && userCategories.length > 0) {
+    for (const category of userCategories) {
+      const categoryNameLower = category.name.toLowerCase();
+      
+      // Buscar palabras clave para esta categoría
+      const keywords = categoryKeywords[category.name] || [];
+      
+      // Agregar el nombre de la categoría como palabra clave
+      const allKeywords = [categoryNameLower, ...keywords.map(k => k.toLowerCase())];
+      
+      // Buscar coincidencias exactas de palabras
+      for (const keyword of allKeywords) {
+        // Crear expresión regular para buscar la palabra completa
+        const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        
+        if (regex.test(normalizedDescription)) {
+          return category.name;
+        }
+      }
+      
+      // Buscar coincidencias parciales para palabras más largas
+      for (const keyword of allKeywords) {
+        if (keyword.length > 4 && normalizedDescription.includes(keyword)) {
+          return category.name;
+        }
+      }
+    }
+  }
+  
+  // Si no hay categorías de usuario o no se encontró coincidencia,
+  // buscar en todas las categorías predefinidas del sistema
+  for (const [categoryName, keywords] of Object.entries(categoryKeywords)) {
+    const allKeywords = [categoryName.toLowerCase(), ...keywords.map(k => k.toLowerCase())];
     
     // Buscar coincidencias exactas de palabras
     for (const keyword of allKeywords) {
@@ -127,14 +166,14 @@ export function detectCategory(description: string, userCategories: Category[]):
       const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
       
       if (regex.test(normalizedDescription)) {
-        return category.name;
+        return categoryName;
       }
     }
     
     // Buscar coincidencias parciales para palabras más largas
     for (const keyword of allKeywords) {
       if (keyword.length > 4 && normalizedDescription.includes(keyword)) {
-        return category.name;
+        return categoryName;
       }
     }
   }

@@ -9,6 +9,8 @@ import FinancialAnalysis from './components/FinancialAnalysis';
 import PremiumModal from './components/PremiumModal';
 import PremiumFeature from './components/PremiumFeature';
 import AdminCleanup from './components/AdminCleanup';
+import Navigation from './components/Navigation';
+import SmartInput from './components/SmartInput';
 
 
 // import { formatChileanPrice } from './services/liderScraper'; // Replaced by formatPrice from i18n
@@ -69,6 +71,14 @@ function AppContent() {
   });
   const [showAdminCleanup, setShowAdminCleanup] = useState(false);
   const [adminClickCount, setAdminClickCount] = useState(0);
+  
+  // Estados para SmartInput
+  const [expenseDescription, setExpenseDescription] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState<number>(0);
+  const [expenseCategory, setExpenseCategory] = useState('');
+  const [budgetItemName, setBudgetItemName] = useState('');
+  const [budgetItemAmount, setBudgetItemAmount] = useState<number>(0);
+  const [budgetItemCategory, setBudgetItemCategory] = useState('');
 
   // Función para acceder al panel de administración
   const handleAdminAccess = () => {
@@ -148,7 +158,7 @@ function AppContent() {
   // Si no hay usuario autenticado, mostrar welcome o login
   if (!currentUser) {
     if (showWelcome) {
-      return <Welcome onGetStarted={() => {
+      return <Welcome onStart={() => {
         localStorage.setItem('hasSeenWelcome', 'true');
         setShowWelcome(false);
       }} />;
@@ -489,62 +499,38 @@ function AppContent() {
 
   return (
     <div className="App">
-      <header className="app-header">
-        <div className="header-left">
-          <h1 
-            onClick={handleAdminAccess}
-            style={{ cursor: 'pointer' }}
-            title={`Clics: ${adminClickCount}/5 para admin`}
-          >
-            💰 GastosInteligentes
-          </h1>
-        </div>
-        <div className="header-center">
-          <nav className="tab-navigation">
-            <button 
-              className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`}
-              onClick={() => setActiveTab('budget')}
-            >
-              📊 Presupuesto
-            </button>
-            <button 
-              className={`tab-btn ${activeTab === 'analysis' ? 'active' : ''}`}
-              onClick={() => setActiveTab('analysis')}
-            >
-              📈 Análisis
-            </button>
-          </nav>
-        </div>
-        <div className="header-right">
-          <div className="user-info">
-            {currentUser?.photoURL && (
-              <img 
-                src={currentUser.photoURL} 
-                alt="Profile" 
-                className="user-avatar"
-              />
-            )}
-            <span className="user-name">{currentUser?.displayName}</span>
-            <button className="logout-btn" onClick={logout}>
-              Cerrar Sesión
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Month Selector */}
-      <div className="month-selector-container">
-        <div className="month-selector">
-          <label htmlFor="month-select">📅 Seleccionar Mes:</label>
-          <input
-            id="month-select"
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="month-input"
-          />
-        </div>
-      </div>
+      <Navigation
+        currentUser={{
+          name: currentUser?.displayName || 'Usuario',
+          email: currentUser?.email || '',
+          avatar: currentUser?.photoURL || ''
+        }}
+        selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
+        activeTab={activeTab}
+        onTabChange={(tab: string) => setActiveTab(tab as TabType)}
+        onLogout={logout}
+        onAdminAccess={handleAdminAccess}
+        adminClickCount={adminClickCount}
+        onQuickAction={(action: string) => {
+          switch (action) {
+            case 'add-expense':
+              // Scroll to add expense form
+              document.querySelector('.add-form')?.scrollIntoView({ behavior: 'smooth' });
+              break;
+            case 'setup-budget':
+              setShowBudgetSetup(true);
+              break;
+            case 'setup-categories':
+              setShowCategorySetup(true);
+              break;
+            case 'export-data':
+              // TODO: Implement data export
+              alert('Función de exportación próximamente');
+              break;
+          }
+        }}
+      />
 
       <main className="main-content">
 
@@ -579,60 +565,150 @@ function AppContent() {
             <PremiumFeature className="add-form" title="Registro de Gastos Fijos">
               <h3>Gastos Fijos Mensuales</h3>
               <p>Registra aquí tus gastos básicos como servicios, hipoteca, créditos, etc.</p>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const formData = new FormData(form);
-                addBudgetItem(
-                    formData.get('name') as string,
-                    Number(formData.get('amount')),
-                    formData.get('category') as 'credito' | 'servicios' | 'hipoteca' | 'otros'
-                  );
-                form.reset();
-              }}>
-                <input name="name" placeholder="Descripción del gasto" required />
-                 <input name="amount" type="number" placeholder="Monto mensual" required />
-                 <select name="category" required>
-                   <option value="">Seleccionar categoría</option>
-                   <option value="servicios">Servicios Básicos</option>
-                   <option value="hipoteca">Hipoteca/Arriendo</option>
-                   <option value="credito">Créditos</option>
-                   <option value="otros">Otros Fijos</option>
-                 </select>
-                <button type="submit">Agregar Gasto Fijo</button>
-              </form>
+              <div className="form-grid" style={{ display: 'grid', gap: '12px', gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '12px' }}>
+                <SmartInput
+                   type="text"
+                   label="Descripción del gasto"
+                   value={budgetItemName}
+                   onChange={(value) => setBudgetItemName(String(value))}
+                   placeholder="Ej: Luz, Agua, Arriendo"
+                   required
+                 />
+                 <SmartInput
+                   type="currency"
+                   label="Monto mensual"
+                   value={budgetItemAmount.toString()}
+                   onChange={(value) => setBudgetItemAmount(Number(value) || 0)}
+                   placeholder="0"
+                   required
+                 />
+                 <SmartInput
+                   type="category"
+                   label="Categoría"
+                   value={budgetItemCategory}
+                   onChange={(value) => setBudgetItemCategory(String(value))}
+                   suggestions={['servicios', 'hipoteca', 'credito', 'otros']}
+                   placeholder="Seleccionar categoría"
+                   required
+                 />
+              </div>
+              <button 
+                onClick={() => {
+                  if (budgetItemName && budgetItemAmount && budgetItemCategory) {
+                    addBudgetItem(
+                      budgetItemName,
+                      budgetItemAmount,
+                      budgetItemCategory as 'credito' | 'servicios' | 'hipoteca' | 'otros'
+                    );
+                    setBudgetItemName('');
+                    setBudgetItemAmount(0);
+                    setBudgetItemCategory('');
+                  }
+                }}
+                disabled={!budgetItemName || !budgetItemAmount || !budgetItemCategory}
+                style={{ width: '100%', padding: '12px', fontSize: '16px' }}
+              >
+                Agregar Gasto Fijo
+              </button>
             </PremiumFeature>
 
             <div className="add-form">
               <h3>Gastos Variables</h3>
-              <p>Registra aquí gastos ocasionales. 🤖 <strong>¡Novedad!</strong> Si no seleccionas categoría, la detectaremos automáticamente según tu descripción.</p>
-              <form onSubmit={(e) => {
+              <p>🚀 <strong>¡Nueva funcionalidad!</strong> Escribe todo en un solo campo. Ejemplo: "Almuerzo 15000" y automáticamente detectaremos la descripción, monto y categoría.</p>
+              <form onSubmit={async (e) => {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;
                 const formData = new FormData(form);
+                const expenseInput = formData.get('expenseInput') as string;
+                
+                // Importar el parser de gastos
+                const { parseExpenseInput, isValidExpenseInput } = await import('./utils/expenseParser');
+                
+                if (!isValidExpenseInput(expenseInput)) {
+                  alert('Por favor ingresa un gasto válido. Ejemplo: "Almuerzo 15000" o "Uber 8500"');
+                  return;
+                }
+                
+                const parsedExpense = parseExpenseInput(expenseInput, userData?.categories || []);
+                
+                if (!parsedExpense) {
+                  alert('No pudimos procesar tu gasto. Asegúrate de incluir una descripción y un monto. Ejemplo: "Almuerzo 15000"');
+                  return;
+                }
+                
+                console.log('🎯 Gasto parseado:', parsedExpense);
+                
                 addTransaction(
-                  formData.get('description') as string,
-                  Number(formData.get('amount')),
-                  formData.get('category') as string
+                  parsedExpense.description,
+                  parsedExpense.amount,
+                  parsedExpense.category
                 );
                 form.reset();
               }}>
-                <input name="description" placeholder="Ej: Almuerzo con amigos, Uber al trabajo, etc." required />
-                <input name="amount" type="number" placeholder="Monto" required />
-                <select name="category">
-                  <option value="">🤖 Detectar categoría automáticamente</option>
-                  {userData?.categories && userData.categories.length > 0 ? (
-                    userData.categories.map(category => (
-                      <option key={category.id} value={category.name}>
-                        {category.icon} {category.name}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="Otros">Otros</option>
-                  )}
-                </select>
-                <button type="submit">Agregar Gasto Variable</button>
+                <input 
+                  name="expenseInput" 
+                  placeholder="Ej: Almuerzo 15000, Uber trabajo 8500, Doctor consulta 35000" 
+                  required 
+                  style={{ fontSize: '16px', padding: '12px' }}
+                />
+                <div className="parsing-examples" style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                  💡 <strong>Ejemplos:</strong> "Almuerzo 15000", "Uber al trabajo 8500", "Medicamentos 12000", "Cine 7000"
+                </div>
+                <button type="submit">🤖 Procesar y Agregar Gasto</button>
               </form>
+              
+              {/* Formulario mejorado con SmartInput */}
+              <details style={{ marginTop: '20px' }}>
+                <summary style={{ cursor: 'pointer', color: '#666', fontSize: '14px' }}>📝 Formulario Detallado con SmartInput</summary>
+                <div style={{ marginTop: '10px', padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+                  <div className="form-grid" style={{ display: 'grid', gap: '12px', gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '12px' }}>
+                    <SmartInput
+                       type="text"
+                       label="Descripción del gasto"
+                       value={expenseDescription}
+                       onChange={(value) => setExpenseDescription(String(value))}
+                       placeholder="Ej: Almuerzo en restaurante"
+                       required
+                     />
+                     <SmartInput
+                       type="currency"
+                       label="Monto"
+                       value={expenseAmount.toString()}
+                       onChange={(value) => setExpenseAmount(Number(value) || 0)}
+                       placeholder="0"
+                       required
+                     />
+                     <SmartInput
+                       type="category"
+                       label="Categoría"
+                       value={expenseCategory}
+                       onChange={(value) => setExpenseCategory(String(value))}
+                       suggestions={userData?.categories?.map(cat => cat.name) || []}
+                       placeholder="Seleccionar categoría"
+                       required
+                     />
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if (expenseDescription && expenseAmount && expenseCategory) {
+                        addTransaction(
+                          expenseDescription,
+                          expenseAmount,
+                          expenseCategory
+                        );
+                        setExpenseDescription('');
+                        setExpenseAmount(0);
+                        setExpenseCategory('');
+                      }
+                    }}
+                    className="add-expense-btn enhanced"
+                    disabled={!expenseDescription || !expenseAmount || !expenseCategory}
+                    style={{ width: '100%', padding: '12px', fontSize: '16px' }}
+                  >
+                    Agregar Gasto Detallado
+                  </button>
+                </div>
+              </details>
             </div>
 
             <PremiumFeature className="budget-section" title="Lista de Gastos Fijos">

@@ -25,7 +25,7 @@ const CategorySetup: React.FC<CategorySetupProps> = ({ onComplete }) => {
     { id: '1', name: 'Salida con amigos', icon: '🍻', color: '#FF6B6B' },
     { id: '2', name: 'Almuerzo', icon: '🍽️', color: '#4ECDC4' },
     { id: '3', name: 'Supermercado', icon: '🛒', color: '#45B7D1' },
-    { id: '4', name: 'Locomoción', icon: '🚌', color: '#96CEB4' },
+    { id: '4', name: 'Transporte', icon: '🚌', color: '#96CEB4' },
     { id: '5', name: 'Compra por internet', icon: '💻', color: '#FFEAA7' },
     { id: '6', name: 'Pago de cuentas', icon: '💳', color: '#DDA0DD' },
     { id: '7', name: 'Pensión', icon: '🏠', color: '#98D8C8' },
