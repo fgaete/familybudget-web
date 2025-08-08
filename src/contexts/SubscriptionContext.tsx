@@ -22,23 +22,22 @@ interface SubscriptionProviderProps {
 }
 
 export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ children }) => {
-  const [isPremium, setIsPremium] = useState(false); // Por defecto gratuito
+  const [isPremium, setIsPremium] = useState(false); // Siempre gratuito
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const upgradeToPremium = () => {
     // TODO: Implementar lógica de pago real
     // Por ahora, solo cerramos el modal sin actualizar el estado
     setShowPremiumModal(false);
-    // setIsPremium(true);
-    // localStorage.setItem('isPremium', 'true');
+    // Funcionalidad premium deshabilitada
   };
 
-  // Cargar estado de suscripción desde localStorage
+  // Limpiar cualquier estado premium previo y mantener siempre gratuito
   React.useEffect(() => {
-    const savedPremiumStatus = localStorage.getItem('isPremium');
-    if (savedPremiumStatus === 'true') {
-      setIsPremium(true);
-    }
+    // Eliminar cualquier registro previo de premium
+    localStorage.removeItem('isPremium');
+    // Asegurar que siempre sea gratuito
+    setIsPremium(false);
   }, []);
 
   const value = {
