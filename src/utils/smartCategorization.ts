@@ -6,37 +6,62 @@ import { Category } from '../services/userService';
 const categoryKeywords: Record<string, string[]> = {
   'Alimentación': [
     'almuerzo', 'desayuno', 'cena', 'comida', 'restaurant', 'restaurante',
-    'pizza', 'hamburguesa', 'sushi', 'empanada', 'sandwich', 'café', 'te',
+    'pizza', 'hamburguesa', 'sushi', 'empanada', 'sandwich', 'café', 'te', 'té',
     'supermercado', 'verduras', 'frutas', 'carne', 'pollo', 'pescado',
     'pan', 'leche', 'huevos', 'arroz', 'pasta', 'fideos', 'cocina',
     'delivery', 'pedidos', 'uber eats', 'rappi', 'dominos', 'mcdonalds',
     'kfc', 'subway', 'starbucks', 'dunkin', 'burger king', 'taco bell',
-    'mercado', 'feria', 'carnicería', 'panadería', 'pastelería'
-  ],
-  'Transporte': [
+    'mercado', 'feria', 'carnicería', 'panadería', 'pastelería',
+    'once', 'merienda', 'colación', 'snack', 'aperitivo',
+    'bebida', 'jugo', 'gaseosa', 'agua', 'cerveza', 'vino',
+    'compras comida', 'compras supermercado', 'compras mercado',
+    'lider', 'jumbo', 'santa isabel', 'unimarc', 'tottus'
+   ],
+   'Transporte': [
     'uber', 'taxi', 'metro', 'bus', 'micro', 'colectivo', 'bencina',
     'gasolina', 'combustible', 'peaje', 'estacionamiento', 'parking',
     'mecánico', 'taller', 'neumáticos', 'ruedas', 'aceite', 'revisión',
     'permiso', 'circulación', 'seguro auto', 'auto', 'coche', 'vehículo',
-    'viaje', 'pasaje', 'boleto', 'ticket', 'transporte público'
-  ],
-  'Entretenimiento': [
+    'viaje', 'pasaje', 'boleto', 'ticket', 'transporte público',
+    'cabify', 'didi', 'beat', 'transantiago', 'red metropolitana',
+    'tarjeta bip', 'bip', 'recarga bip', 'locomoción',
+    'mantención auto', 'reparación auto', 'lavado auto',
+    'autopista', 'tag', 'telepeaje', 'copec', 'shell', 'petrobras'
+   ],
+   'Entretenimiento': [
     'cine', 'película', 'teatro', 'concierto', 'show', 'espectáculo',
     'bar', 'pub', 'discoteca', 'club', 'fiesta', 'cumpleaños',
     'netflix', 'spotify', 'disney', 'amazon prime', 'hbo', 'streaming',
     'videojuegos', 'juegos', 'playstation', 'xbox', 'nintendo',
     'parque', 'diversiones', 'bowling', 'karaoke', 'escape room',
-    'museo', 'exposición', 'evento', 'festival', 'carrete'
-  ],
-  'Salud': [
+    'museo', 'exposición', 'evento', 'festival', 'carrete',
+    'salida', 'panorama', 'recreación', 'ocio', 'diversión',
+    'youtube premium', 'apple music', 'paramount', 'crunchyroll',
+    'steam', 'epic games', 'app store', 'google play',
+    'parque de diversiones', 'fantasilandia', 'mall sport',
+    'paintball', 'go kart', 'minigolf', 'piscina', 'gimnasio'
+   ],
+   'Salud': [
     'médico', 'doctor', 'dentista', 'hospital', 'clínica', 'consulta',
+    'consulta médica', 'consulta dental', 'consulta psicológica',
     'medicamentos', 'remedios', 'farmacia', 'pastillas', 'jarabe',
+    'medicina', 'medicamento', 'fármaco', 'antibiótico', 'analgésico',
     'vitaminas', 'suplementos', 'examen', 'análisis', 'radiografía',
     'ecografía', 'resonancia', 'operación', 'cirugía', 'terapia',
-    'psicólogo', 'psiquiatra', 'kinesiólogo', 'nutricionista',
-    'oftalmólogo', 'dermatólogo', 'ginecólogo', 'pediatra'
-  ],
-  'Educación': [
+    'psicólogo', 'psiquiatra', 'psicología', 'psiquiatría', 'sicología', 'siquiatría',
+    'kinesiólogo', 'kinesiología', 'fisioterapia', 'nutricionista', 'nutrición',
+    'oftalmólogo', 'oftalmología', 'dermatólogo', 'dermatología',
+    'ginecólogo', 'ginecología', 'pediatra', 'pediatría',
+    'cardiólogo', 'cardiología', 'neurólogo', 'neurología',
+    'traumatólogo', 'traumatología', 'urólogo', 'urología',
+    'endocrinólogo', 'endocrinología', 'gastroenterólogo',
+    'salud mental', 'terapia psicológica', 'sesión psicológica',
+    'control médico', 'chequeo médico', 'revisión médica',
+    'vacuna', 'vacunación', 'inmunización', 'inyección',
+    'laboratorio', 'laboratorio clínico', 'exámenes de sangre',
+    'receta médica', 'prescripción médica', 'tratamiento médico'
+   ],
+   'Educación': [
     'colegio', 'escuela', 'universidad', 'instituto', 'curso', 'clase',
     'matrícula', 'mensualidad', 'libros', 'cuadernos', 'útiles',
     'materiales', 'uniforme', 'mochila', 'calculadora', 'computador',

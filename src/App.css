@@ -1414,13 +1414,32 @@ body {
 
 .analysis-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: 300px 1fr;
   gap: 20px;
+  align-items: start;
 }
 
-.metric-card,
-.category-breakdown-card,
+@media (max-width: 768px) {
+  .analysis-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .category-breakdown-card {
+    grid-column: span 1;
+  }
+}
 
+.metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  max-width: 300px;
+}
+
+.category-breakdown-card,
 .projections-card,
 .trends-card {
   background: white;
@@ -1431,18 +1450,32 @@ body {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.metric-card:hover,
-.category-breakdown-card:hover,
+.category-breakdown-card {
+  grid-column: span 2;
+  min-height: 400px;
+}
 
+.metric-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+}
+
+.category-breakdown-card:hover,
 .projections-card:hover,
 .trends-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-.metric-card h3,
-.category-breakdown-card h3,
+.metric-card h3 {
+  margin: 0 0 12px 0;
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
 
+.category-breakdown-card h3,
 .projections-card h3,
 .trends-card h3 {
   margin: 0 0 16px 0;
@@ -1463,11 +1496,11 @@ body {
 }
 
 .amount {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: #1f2937;
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .metric-amount {
@@ -1925,6 +1958,29 @@ body {
 
 .trend-icon {
   font-size: 16px;
+}
+
+.no-data-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.no-data-message span {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.no-data-message p {
+  font-size: 14px;
+  margin: 0;
+  max-width: 250px;
+  line-height: 1.5;
 }
 
 /* Responsive */

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslations } from '../utils/i18n';
+// Removed translations import
 import './Welcome.css';
 
 interface WelcomeProps {
@@ -7,7 +7,7 @@ interface WelcomeProps {
 }
 
 const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
-  const t = useTranslations();
+  // Removed translations hook
   
   return (
     <div className="welcome-container">
@@ -23,8 +23,8 @@ const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
               <path d="M36 40l3 3 6-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <h1 className="app-title">{t.appTitle}</h1>
-          <p className="app-subtitle">{t.appSubtitle}</p>
+          <h1 className="app-title">GastosInteligentes</h1>
+          <p className="app-subtitle">Gestión inteligente de gastos con categorización automática</p>
         </div>
 
         {/* Características principales */}
@@ -40,8 +40,8 @@ const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
                 <circle cx="24" cy="32" r="3" fill="#8B5CF6"/>
               </svg>
             </div>
-            <h3>{t.visualBudget}</h3>
-            <p>{t.visualBudgetDesc}</p>
+            <h3>Categorización Automática</h3>
+            <p>Escribe "Almuerzo con amigos" y el sistema automáticamente lo categoriza como "Almuerzo". ¡Sin complicaciones!</p>
           </div>
 
           <div className="feature-card">
@@ -53,8 +53,8 @@ const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
                 <path d="M32 36l3 3 6-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <h3>{t.smartTracking}</h3>
-            <p>{t.smartTrackingDesc}</p>
+            <h3>Aprendizaje Inteligente</h3>
+            <p>El sistema aprende de tus selecciones y mejora la precisión de categorización con cada uso.</p>
           </div>
 
           <div className="feature-card">
@@ -67,21 +67,21 @@ const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
                 <circle cx="30" cy="30" r="3" fill="#F59E0B"/>
               </svg>
             </div>
-            <h3>{t.personalPlanning}</h3>
-                <p>{t.personalPlanningDesc}</p>
+            <h3>Gestión Simplificada</h3>
+            <p>Registra gastos en texto libre y deja que la inteligencia artificial se encargue del resto.</p>
           </div>
         </div>
 
         {/* Call to action */}
         <div className="cta-section">
           <button className="get-started-btn" onClick={onGetStarted}>
-            <span>{t.getStarted}</span>
+            <span>Comenzar</span>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M7.5 15l5-5-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
           <p className="cta-description">
-            {t.ctaDescription}
+            Únete a la revolución de la gestión inteligente de gastos personales
           </p>
         </div>
       </div>

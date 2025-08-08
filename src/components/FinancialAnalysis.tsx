@@ -1,8 +1,12 @@
 import React from 'react';
-import { useTranslations, formatPrice } from '../utils/i18n';
 import PremiumFeature from './PremiumFeature';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
+// Función para formatear precios en pesos chilenos
+const formatPrice = (amount: number): string => {
+  return `$${amount.toLocaleString('es-CL')}`;
+};
 
 interface Expense {
   name?: string;
@@ -11,23 +15,42 @@ interface Expense {
   category: string;
 }
 
+interface Transaction {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  date: string;
+}
+
 interface FinancialAnalysisProps {
   monthlyBudget: number;
   fixedExpenses: Expense[];
   variableExpenses: Expense[];
+  allTransactions?: Transaction[];
 }
 
 const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
   monthlyBudget,
   fixedExpenses,
-  variableExpenses
+  variableExpenses,
+  allTransactions = []
 }) => {
-  const t = useTranslations();
   const { isPremium } = useSubscription();
+
+  // Debug logs
+  console.log('🔍 FinancialAnalysis - Props recibidas:');
+  console.log('📊 monthlyBudget:', monthlyBudget);
+  console.log('🏠 fixedExpenses:', fixedExpenses);
+  console.log('💸 variableExpenses:', variableExpenses);
+  console.log('📝 variableExpenses length:', variableExpenses?.length || 0);
 
   // Calculate financial metrics
   const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const totalVariableExpenses = variableExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  
+  console.log('💰 totalFixedExpenses calculado:', totalFixedExpenses);
+  console.log('💸 totalVariableExpenses calculado:', totalVariableExpenses);
   const totalExpenses = totalFixedExpenses + totalVariableExpenses;
   const remainingBudget = monthlyBudget - totalExpenses;
   const savingsRate = monthlyBudget > 0 ? (remainingBudget / monthlyBudget) * 100 : 0;
@@ -74,14 +97,66 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
     return categoryData;
   };
 
+  // Generate monthly trends data from actual transactions
+  const getMonthlyTrendsData = () => {
+    if (!allTransactions || allTransactions.length === 0) {
+      return { monthlyData: [], monthLabels: [] };
+    }
+
+    // Group transactions by month
+    const monthlyExpenses: Record<string, number> = {};
+    
+    allTransactions.forEach(transaction => {
+      try {
+        let transactionDate;
+        if (transaction.date.includes('/')) {
+          const parts = transaction.date.split('/');
+          if (parts.length === 3) {
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            transactionDate = new Date(`${year}-${month}-${day}`);
+          } else {
+            transactionDate = new Date(transaction.date);
+          }
+        } else {
+          transactionDate = new Date(transaction.date);
+        }
+        
+        if (!isNaN(transactionDate.getTime())) {
+          const monthKey = `${transactionDate.getUTCFullYear()}-${String(transactionDate.getUTCMonth() + 1).padStart(2, '0')}`;
+          monthlyExpenses[monthKey] = (monthlyExpenses[monthKey] || 0) + transaction.amount;
+        }
+      } catch (error) {
+        console.warn('Error processing transaction date:', transaction.date);
+      }
+    });
+
+    // Sort months and get data
+    const sortedMonths = Object.keys(monthlyExpenses).sort();
+    const monthLabels = sortedMonths.map(monthKey => {
+      const [year, month] = monthKey.split('-');
+      const date = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, 1));
+      return date.toLocaleDateString('es-CL', { month: 'short', timeZone: 'UTC' }).replace('.', '');
+    });
+    
+    const monthlyData = sortedMonths.map(monthKey => monthlyExpenses[monthKey]);
+    const maxAmount = Math.max(...monthlyData);
+    const normalizedData = monthlyData.map(amount => (amount / maxAmount) * 100);
+
+    return { monthlyData: normalizedData, monthLabels, rawData: monthlyData };
+  };
+
+  const { monthlyData, monthLabels, rawData } = getMonthlyTrendsData();
+
 
 
   // Financial health assessment
   const getFinancialHealth = () => {
-    if (savingsRate >= 20) return { status: t.excellent, color: '#10B981' };
-    if (savingsRate >= 10) return { status: t.good, color: '#3B82F6' };
-    if (savingsRate >= 0) return { status: t.needsImprovement, color: '#F59E0B' };
-    return { status: t.critical, color: '#EF4444' };
+    if (savingsRate >= 20) return { status: 'Excelente', color: '#10B981' };
+    if (savingsRate >= 10) return { status: 'Buena', color: '#3B82F6' };
+    if (savingsRate >= 0) return { status: 'Necesita Mejora', color: '#F59E0B' };
+    return { status: 'Crítica', color: '#EF4444' };
   };
 
   const healthStatus = getFinancialHealth();
@@ -93,9 +168,9 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
   return (
     <div className="financial-analysis">
       <div className="analysis-header">
-        <h2>{t.financialAnalysis}</h2>
+        <h2>Análisis Financiero</h2>
         <div className="health-indicator">
-          <span className="health-label">{t.financialHealth}:</span>
+          <span className="health-label">Salud Financiera:</span>
           <span 
             className="health-status" 
             style={{ color: healthStatus.color, fontWeight: 'bold' }}
@@ -109,7 +184,7 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
         {/* Premium Budget Metrics */}
         <PremiumFeature title="Métricas de Presupuesto">
           <div className="metric-card">
-            <h3>{t.budgetEfficiency}</h3>
+            <h3>Eficiencia del Presupuesto</h3>
             <div className="metric-value">
               <span className="percentage">{budgetUtilization.toFixed(1)}%</span>
               <div className="progress-bar">
@@ -125,7 +200,7 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
           </div>
 
           <div className="metric-card">
-            <h3>{t.savingsRate}</h3>
+            <h3>Tasa de Ahorro</h3>
             <div className="metric-value">
               <span className="percentage" style={{ color: healthStatus.color }}>
                 {savingsRate.toFixed(1)}%
@@ -139,44 +214,54 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
 
         {/* Basic Expense Analysis - Always Available */}
         <div className="metric-card">
-          <h3>{t.averageMonthlyExpenses}</h3>
+          <h3>Promedio Gastos Mensuales</h3>
           <div className="metric-value">
             <span className="amount">{formatPrice(totalExpenses)}</span>
             {isPremium && (
               <div className="breakdown">
-                <span>{t.fixed}: {formatPrice(totalFixedExpenses)}</span>
-                <span>{t.variable}: {formatPrice(totalVariableExpenses)}</span>
+                <span>Fijos: {formatPrice(totalFixedExpenses)}</span>
+                <span>Variables: {formatPrice(totalVariableExpenses)}</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Category Breakdown */}
+        {/* Category Breakdown - Pie Chart */}
         <div className="category-breakdown-card">
-          <h3>{t.categoryBreakdown}</h3>
-          <div className="category-list">
-            {sortedCategories.map(([category, amount], index) => {
-              const percentage = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
-              return (
-                <div key={category} className="category-item">
-                  <div className="category-info">
-                    <span className="category-name">{category}</span>
-                    <span className="category-amount">{formatPrice(amount)}</span>
-                  </div>
-                  <div className="category-bar">
-                    <div 
-                      className="category-fill"
-                      style={{ 
-                        width: `${percentage}%`,
-                        backgroundColor: `hsl(${index * 60}, 70%, 50%)`
-                      }}
-                    ></div>
-                  </div>
-                  <span className="category-percentage">{percentage.toFixed(1)}%</span>
-                </div>
-              );
-            })}
-          </div>
+          <h3>Desglose por Categorías</h3>
+          {sortedCategories.length > 0 ? (
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={sortedCategories.map(([category, amount], index) => ({
+                      name: category,
+                      value: amount,
+                      color: `hsl(${index * 60}, 70%, 50%)`
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value, percent }) => `${name}: ${percent ? (percent * 100).toFixed(1) : '0'}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {sortedCategories.map(([, ], index) => (
+                      <Cell key={`cell-${index}`} fill={`hsl(${index * 60}, 70%, 50%)`} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => formatPrice(value)} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="no-data-message">
+              <span>📊</span>
+              <p>No hay categorías para mostrar</p>
+            </div>
+          )}
         </div>
 
 
@@ -184,25 +269,25 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
         {/* Premium Projections */}
         <PremiumFeature title="Proyecciones y Recomendaciones">
           <div className="projections-card">
-            <h3>{t.projections}</h3>
+            <h3>Proyecciones</h3>
             <div className="projection-items">
               <div className="projection-item">
-                <span className="projection-label">{t.nextMonthProjection}</span>
+                <span className="projection-label">Proyección Próximo Mes</span>
                 <span className="projection-value">{formatPrice(nextMonthProjection)}</span>
               </div>
               <div className="projection-item">
-                <span className="projection-label">{t.recommendedSavings}</span>
+                <span className="projection-label">Ahorro Recomendado</span>
                 <span className="projection-value">{formatPrice(recommendedSavings)}</span>
               </div>
               {sortedCategories.length > 0 && (
                 <>
                   <div className="projection-item">
-                    <span className="projection-label">{t.highestExpenseCategory}</span>
+                    <span className="projection-label">Categoría de Mayor Gasto</span>
                     <span className="projection-value">{sortedCategories[0][0]}</span>
                   </div>
                   {sortedCategories.length > 1 && (
                     <div className="projection-item">
-                      <span className="projection-label">{t.lowestExpenseCategory}</span>
+                      <span className="projection-label">Categoría de Menor Gasto</span>
                       <span className="projection-value">{sortedCategories[sortedCategories.length - 1][0]}</span>
                     </div>
                   )}
@@ -298,41 +383,50 @@ const FinancialAnalysis: React.FC<FinancialAnalysisProps> = ({
           </div>
         </PremiumFeature>
 
-        {/* Monthly Trends Placeholder */}
-        <div className="trends-card">
-          <h3>{t.monthlyTrends}</h3>
-          <div className="trend-placeholder">
-            <div className="trend-chart">
-              <div className="chart-bars">
-                {[65, 45, 80, 60, 75, 55].map((height, index) => (
-                  <div 
-                    key={index}
-                    className="chart-bar"
-                    style={{ height: `${height}%` }}
-                  ></div>
-                ))}
+        {/* Monthly Trends - Dynamic - Solo mostrar si hay más de 1 mes */}
+        {monthLabels.length > 1 && (
+          <div className="trends-card">
+            <h3>Tendencias Mensuales</h3>
+            {monthLabels.length > 0 ? (
+            <div className="trend-placeholder">
+              <div className="trend-chart">
+                <div className="chart-bars">
+                  {monthlyData.map((height, index) => (
+                    <div 
+                      key={index}
+                      className="chart-bar"
+                      style={{ height: `${height}%` }}
+                      title={`${monthLabels[index]}: $${rawData?.[index]?.toLocaleString('es-CL') || '0'}`}
+                    ></div>
+                  ))}
+                </div>
+                <div className="chart-labels">
+                  {monthLabels.map((label, index) => (
+                    <span key={index}>{label}</span>
+                  ))}
+                </div>
               </div>
-              <div className="chart-labels">
-                <span>Ene</span>
-                <span>Feb</span>
-                <span>Mar</span>
-                <span>Abr</span>
-                <span>May</span>
-                <span>Jun</span>
+              <div className="trend-summary">
+                <div className="trend-item">
+                  <span className="trend-icon">📊</span>
+                  <span>Meses con datos: {monthLabels.length}</span>
+                </div>
+                <div className="trend-item">
+                  <span className="trend-icon">💰</span>
+                  <span>Total: ${rawData?.reduce((sum, amount) => sum + amount, 0)?.toLocaleString('es-CL') || '0'}</span>
+                </div>
               </div>
             </div>
-            <div className="trend-summary">
-              <div className="trend-item">
-                <span className="trend-icon">📈</span>
-                <span>{t.expenseTrend}: +5.2%</span>
-              </div>
-              <div className="trend-item">
-                <span className="trend-icon">💰</span>
-                <span>{t.savingsTrend}: +12.8%</span>
+          ) : (
+            <div className="trend-placeholder">
+              <div className="no-data-message">
+                <span>📊</span>
+                <p>No hay datos de transacciones para mostrar tendencias mensuales</p>
               </div>
             </div>
+          )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

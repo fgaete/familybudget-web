@@ -13,9 +13,13 @@ import AdminCleanup from './components/AdminCleanup';
 
 // import { formatChileanPrice } from './services/liderScraper'; // Replaced by formatPrice from i18n
 import { userService, UserData } from './services/userService';
-import { useTranslations, formatPrice } from './utils/i18n';
 import { Timestamp } from 'firebase/firestore';
 import './App.css';
+
+// Función para formatear precios en pesos chilenos
+const formatPrice = (amount: number): string => {
+  return `$${amount.toLocaleString('es-CL')}`;
+};
 
 // Local interfaces for UI compatibility
 
@@ -46,7 +50,6 @@ function App() {
 // Componente de contenido principal
 function AppContent() {
   const { currentUser, logout } = useAuth();
-  const t = useTranslations();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCategorySetup, setShowCategorySetup] = useState(false);
@@ -59,8 +62,10 @@ function AppContent() {
   const [editingBudgetItem, setEditingBudgetItem] = useState<any>(null);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    // Estado para el mes seleccionado (mes actual)
+    const currentDate = new Date();
+    const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+    return currentMonth;
   });
   const [showAdminCleanup, setShowAdminCleanup] = useState(false);
   const [adminClickCount, setAdminClickCount] = useState(0);
@@ -107,13 +112,19 @@ function AppContent() {
         if (user) {
           setUserData(user);
 
-          setTransactions(user.purchases?.map(p => ({
-            id: p.id,
-            description: p.name,
-            amount: p.amount,
-            category: p.category,
-            date: p.date.toDate().toLocaleDateString('es-CL')
-          })) || []);
+          setTransactions(user.purchases?.map(p => {
+            const firebaseDate = p.date.toDate();
+            // Usar formato YYYY-MM-DD para evitar confusión con DD-MM-YYYY
+            const formattedDate = `${firebaseDate.getUTCFullYear()}-${String(firebaseDate.getUTCMonth() + 1).padStart(2, '0')}-${String(firebaseDate.getUTCDate()).padStart(2, '0')}`;
+            console.log('📅 Fecha desde Firebase (loadUserData UTC):', firebaseDate.toISOString(), '→ Formateada:', formattedDate);
+            return {
+              id: p.id,
+              description: p.name,
+              amount: p.amount,
+              category: p.category,
+              date: formattedDate
+            };
+          }) || []);
           setMonthlyBudget(user.monthlyBudget);
           
 
@@ -150,7 +161,7 @@ function AppContent() {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>{t.loading}</p>
+        <p>Cargando...</p>
       </div>
     );
   }
@@ -186,13 +197,19 @@ function AppContent() {
             setMonthlyBudget(user.monthlyBudget);
             
             // Recargar transacciones desde Firestore
-            setTransactions(user.purchases?.map(p => ({
-              id: p.id,
-              description: p.name,
-              amount: p.amount,
-              category: p.category,
-              date: p.date.toDate().toLocaleDateString('es-CL')
-            })) || []);
+            setTransactions(user.purchases?.map(p => {
+              const firebaseDate = p.date.toDate();
+              // Usar formato YYYY-MM-DD para evitar confusión con DD-MM-YYYY
+              const formattedDate = `${firebaseDate.getUTCFullYear()}-${String(firebaseDate.getUTCMonth() + 1).padStart(2, '0')}-${String(firebaseDate.getUTCDate()).padStart(2, '0')}`;
+              console.log('📅 Fecha desde Firebase (BudgetSetup UTC):', firebaseDate.toISOString(), '→ Formateada:', formattedDate);
+              return {
+                id: p.id,
+                description: p.name,
+                amount: p.amount,
+                category: p.category,
+                date: formattedDate
+              };
+            }) || []);
             
 
           }
@@ -218,6 +235,7 @@ function AppContent() {
       if (detectedCategory) {
         finalCategory = detectedCategory;
         console.log(`🤖 Categoría detectada automáticamente: "${description}" → ${detectedCategory}`);
+        console.log(`💰 Monto cargado: $${amount}`);
       } else {
         finalCategory = 'Otros'; // Categoría por defecto
       }
@@ -226,13 +244,22 @@ function AppContent() {
       learnFromUserSelection(description, category);
     }
     
+    // Usar el mes seleccionado arriba para la fecha de la transacción
+    const [year, month] = selectedMonth.split('-');
+    // Usar UTC para evitar problemas de zona horaria
+    const transactionDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, 1, 12, 0, 0)); // Día 1 del mes seleccionado a las 12:00 UTC
+    console.log('📅 Fecha de transacción basada en mes seleccionado:', transactionDate, 'selectedMonth:', selectedMonth);
+    console.log('📅 Año:', year, 'Mes:', month, 'Fecha UTC creada:', transactionDate.toISOString());
+    
     const purchase = {
       id: Date.now().toString(),
       name: description,
       amount,
       category: finalCategory,
-      date: Timestamp.now()
+      date: Timestamp.fromDate(transactionDate)
     };
+    
+    console.log('📝 Nueva transacción creada:', purchase);
     
     try {
       await userService.addPurchase(currentUser.uid, purchase);
@@ -240,19 +267,27 @@ function AppContent() {
       // Recargar datos del usuario para actualizar la interfaz
       const user = await userService.getUser(currentUser.uid);
       if (user) {
+        console.log('🔄 Datos del usuario recargados desde Firebase:', user.purchases?.length || 0, 'compras');
+        console.log('🛒 Purchases desde Firebase:', user.purchases);
         setUserData(user);
-        setTransactions(user.purchases?.map(p => ({
-          id: p.id,
-          description: p.name,
-          amount: p.amount,
-          category: p.category,
-          date: p.date.toDate().toLocaleDateString('es-CL')
-        })) || []);
+        setTransactions(user.purchases?.map(p => {
+          const firebaseDate = p.date.toDate();
+          // Usar UTC para evitar problemas de zona horaria
+          const formattedDate = `${firebaseDate.getUTCFullYear()}-${String(firebaseDate.getUTCMonth() + 1).padStart(2, '0')}-${String(firebaseDate.getUTCDate()).padStart(2, '0')}`;
+          console.log('📅 Fecha desde Firebase (UTC):', firebaseDate.toISOString(), '→ Formateada:', formattedDate);
+          return {
+            id: p.id,
+            description: p.name,
+            amount: p.amount,
+            category: p.category,
+            date: formattedDate
+          };
+        }) || []);
       }
       
     } catch (error) {
       console.error('Error adding transaction:', error);
-      alert(t.errorAddingTransaction);
+      alert('Error al agregar la transacción');
     }
   };
 
@@ -288,7 +323,7 @@ function AppContent() {
       }
     } catch (error) {
       console.error('Error adding budget item:', error);
-      alert(t.errorAddingBudgetItem);
+      alert('Error al agregar el gasto fijo');
     }
   };
 
@@ -307,7 +342,7 @@ function AppContent() {
       setEditingBudgetItem(null);
     } catch (error) {
       console.error('Error updating budget item:', error);
-      alert(t.errorUpdatingBudgetItem);
+      alert('Error al actualizar el gasto fijo');
     }
   };
 
@@ -315,7 +350,7 @@ function AppContent() {
   const deleteBudgetItem = async (itemId: string) => {
     if (!currentUser) return;
     
-    if (window.confirm(t.confirmDeleteBudgetItem)) {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este gasto fijo?')) {
       try {
         await userService.deleteBudgetItem(currentUser.uid, itemId);
         // Recargar datos del usuario
@@ -326,7 +361,7 @@ function AppContent() {
         }
       } catch (error) {
         console.error('Error deleting budget item:', error);
-        alert(t.errorDeletingBudgetItem);
+        alert('Error al eliminar el gasto fijo');
       }
     }
   };
@@ -336,13 +371,20 @@ function AppContent() {
     if (!currentUser) return;
     
     try {
+      // Usar el mes seleccionado arriba para la fecha de la transacción editada
+      const [year, month] = selectedMonth.split('-');
+      // Usar UTC para evitar problemas de zona horaria
+      const transactionDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, 1, 12, 0, 0)); // Día 1 del mes seleccionado a las 12:00 UTC
+      console.log('📅 Fecha de transacción editada basada en mes seleccionado:', transactionDate, 'selectedMonth:', selectedMonth);
+      console.log('📅 Año:', year, 'Mes:', month, 'Fecha UTC editada:', transactionDate.toISOString());
+      
       // Convertir la transacción a formato Purchase para Firestore
       const purchase = {
         id: updatedTransaction.id,
         name: updatedTransaction.description,
         amount: updatedTransaction.amount,
         category: updatedTransaction.category, // Usar la categoría actualizada
-        date: Timestamp.now()
+        date: Timestamp.fromDate(transactionDate)
       };
       
       await userService.updatePurchase(currentUser.uid, purchase);
@@ -351,19 +393,25 @@ function AppContent() {
       const user = await userService.getUser(currentUser.uid);
       if (user) {
         setUserData(user);
-        setTransactions(user.purchases?.map(p => ({
-          id: p.id,
-          description: p.name,
-          amount: p.amount,
-          category: p.category,
-          date: p.date.toDate().toLocaleDateString('es-CL')
-        })) || []);
+        setTransactions(user.purchases?.map(p => {
+          const firebaseDate = p.date.toDate();
+          // Usar formato YYYY-MM-DD para evitar confusión con DD-MM-YYYY
+          const formattedDate = `${firebaseDate.getUTCFullYear()}-${String(firebaseDate.getUTCMonth() + 1).padStart(2, '0')}-${String(firebaseDate.getUTCDate()).padStart(2, '0')}`;
+          console.log('📅 Fecha desde Firebase (update UTC):', firebaseDate.toISOString(), '→ Formateada:', formattedDate);
+          return {
+            id: p.id,
+            description: p.name,
+            amount: p.amount,
+            category: p.category,
+            date: formattedDate
+          };
+        }) || []);
       }
       
       setEditingTransaction(null);
     } catch (error) {
       console.error('Error updating transaction:', error);
-        alert(t.errorUpdatingTransaction);
+        alert('Error al actualizar el gasto');
     }
   };
 
@@ -371,7 +419,7 @@ function AppContent() {
   const deleteTransaction = async (transactionId: string) => {
     if (!currentUser) return;
     
-    if (window.confirm(t.confirmDeleteTransaction)) {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este gasto?')) {
       try {
         await userService.deletePurchase(currentUser.uid, transactionId);
         
@@ -381,7 +429,7 @@ function AppContent() {
         
       } catch (error) {
         console.error('Error deleting transaction:', error);
-          alert(t.errorDeletingTransaction);
+          alert('Error al eliminar el gasto');
       }
     }
   };
@@ -391,18 +439,25 @@ function AppContent() {
 
 
   // Filter transactions by selected month
+  console.log('🔍 Filtrando transacciones:');
+  console.log('📅 selectedMonth:', selectedMonth);
+  console.log('📋 transactions antes del filtro:', transactions);
+  
   const filteredTransactions = transactions.filter(transaction => {
+    console.log('🔎 Procesando transacción:', transaction);
     try {
       // Handle Chilean date format DD/MM/YYYY
       let transactionDate;
       if (transaction.date.includes('/')) {
         const parts = transaction.date.split('/');
+        console.log('📅 Partes de fecha:', parts);
         if (parts.length === 3) {
           // Convert DD/MM/YYYY to YYYY-MM-DD for proper Date parsing
           const day = parts[0].padStart(2, '0');
           const month = parts[1].padStart(2, '0');
           const year = parts[2];
           transactionDate = new Date(`${year}-${month}-${day}`);
+          console.log('📅 Fecha convertida:', transactionDate);
         } else {
           transactionDate = new Date(transaction.date);
         }
@@ -412,17 +467,22 @@ function AppContent() {
       
       // Check if date is valid
       if (isNaN(transactionDate.getTime())) {
-        console.warn('Invalid date format:', transaction.date);
+        console.warn('❌ Invalid date format:', transaction.date);
         return false;
       }
       
-      const transactionMonth = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`;
-      return transactionMonth === selectedMonth;
+      const transactionMonth = `${transactionDate.getUTCFullYear()}-${String(transactionDate.getUTCMonth() + 1).padStart(2, '0')}`;
+      console.log('📅 transactionMonth calculado (UTC):', transactionMonth, 'vs selectedMonth:', selectedMonth);
+      const matches = transactionMonth === selectedMonth;
+      console.log('✅ Coincide:', matches);
+      return matches;
     } catch (error) {
-      console.error('Error filtering transaction:', error, transaction);
+      console.error('❌ Error filtering transaction:', error, transaction);
       return false;
     }
   });
+  
+  console.log('✅ Transacciones filtradas:', filteredTransactions);
 
   const totalUsedBudget = (userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0) + filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
   const budgetUsedPercentage = monthlyBudget > 0 ? (totalUsedBudget / monthlyBudget) * 100 : 0;
@@ -436,7 +496,7 @@ function AppContent() {
             style={{ cursor: 'pointer' }}
             title={`Clics: ${adminClickCount}/5 para admin`}
           >
-            💰 {t.appTitle}
+            💰 GastosInteligentes
           </h1>
         </div>
         <div className="header-center">
@@ -445,13 +505,13 @@ function AppContent() {
               className={`tab-btn ${activeTab === 'budget' ? 'active' : ''}`}
               onClick={() => setActiveTab('budget')}
             >
-              {t.budgetTab}
+              📊 Presupuesto
             </button>
             <button 
               className={`tab-btn ${activeTab === 'analysis' ? 'active' : ''}`}
               onClick={() => setActiveTab('analysis')}
             >
-              {t.analysisTab}
+              📈 Análisis
             </button>
           </nav>
         </div>
@@ -493,10 +553,10 @@ function AppContent() {
           <div className="tab-content">
             <h2>Presupuesto Personal</h2>
             <PremiumFeature className="summary-card" title="Resumen de Presupuesto Mensual">
-              <h3>{t.monthlyBudget}</h3>
-              <p>{t.monthlyBudget}: {formatPrice(monthlyBudget)}</p>
-              <p>{t.usedBudget}: {formatPrice((userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0) + filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0))}</p>
-              <p>{t.remainingBudget}: {formatPrice(Math.max(0, monthlyBudget - (userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0) - filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0)))}</p>
+              <h3>Presupuesto Mensual</h3>
+              <p>Presupuesto Mensual: {formatPrice(monthlyBudget)}</p>
+              <p>Presupuesto Usado: {formatPrice((userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0) + filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0))}</p>
+              <p>Presupuesto Restante: {formatPrice(Math.max(0, monthlyBudget - (userData?.budgetItems?.reduce((sum, item) => sum + item.amount, 0) || 0) - filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0)))}</p>
               <div className="budget-bar">
                 <div 
                   className="budget-progress" 
@@ -512,12 +572,12 @@ function AppContent() {
                 onClick={updateMonthlyBudget}
                 className="setup-btn"
               >
-                {t.setupBudget}
+                Configurar Presupuesto
               </button>
             </PremiumFeature>
 
             <PremiumFeature className="add-form" title="Registro de Gastos Fijos">
-              <h3>{t.fixedExpenses}</h3>
+              <h3>Gastos Fijos Mensuales</h3>
               <p>Registra aquí tus gastos básicos como servicios, hipoteca, créditos, etc.</p>
               <form onSubmit={(e) => {
                 e.preventDefault();
@@ -530,8 +590,8 @@ function AppContent() {
                   );
                 form.reset();
               }}>
-                <input name="name" placeholder={t.expenseDescription} required />
-                 <input name="amount" type="number" placeholder={t.monthlyAmount} required />
+                <input name="name" placeholder="Descripción del gasto" required />
+                 <input name="amount" type="number" placeholder="Monto mensual" required />
                  <select name="category" required>
                    <option value="">Seleccionar categoría</option>
                    <option value="servicios">Servicios Básicos</option>
@@ -539,12 +599,12 @@ function AppContent() {
                    <option value="credito">Créditos</option>
                    <option value="otros">Otros Fijos</option>
                  </select>
-                <button type="submit">{t.addFixedExpense}</button>
+                <button type="submit">Agregar Gasto Fijo</button>
               </form>
             </PremiumFeature>
 
             <div className="add-form">
-              <h3>{t.variableExpenses}</h3>
+              <h3>Gastos Variables</h3>
               <p>Registra aquí gastos ocasionales. 🤖 <strong>¡Novedad!</strong> Si no seleccionas categoría, la detectaremos automáticamente según tu descripción.</p>
               <form onSubmit={(e) => {
                 e.preventDefault();
@@ -558,7 +618,7 @@ function AppContent() {
                 form.reset();
               }}>
                 <input name="description" placeholder="Ej: Almuerzo con amigos, Uber al trabajo, etc." required />
-                <input name="amount" type="number" placeholder={t.amount} required />
+                <input name="amount" type="number" placeholder="Monto" required />
                 <select name="category">
                   <option value="">🤖 Detectar categoría automáticamente</option>
                   {userData?.categories && userData.categories.length > 0 ? (
@@ -571,7 +631,7 @@ function AppContent() {
                     <option value="Otros">Otros</option>
                   )}
                 </select>
-                <button type="submit">{t.addVariableExpense}</button>
+                <button type="submit">Agregar Gasto Variable</button>
               </form>
             </div>
 
@@ -657,11 +717,21 @@ function AppContent() {
         )}
 
         {activeTab === 'analysis' && (
-          <FinancialAnalysis
-            monthlyBudget={monthlyBudget}
-            fixedExpenses={userData?.budgetItems || []}
-            variableExpenses={filteredTransactions}
-          />
+          <>
+            {/* Debug logs para FinancialAnalysis */}
+            {console.log('🚀 App.tsx - Pasando datos a FinancialAnalysis:')}
+            {console.log('📊 monthlyBudget:', monthlyBudget)}
+            {console.log('🏠 fixedExpenses (budgetItems):', userData?.budgetItems || [])}
+            {console.log('💸 filteredTransactions:', filteredTransactions)}
+            {console.log('📝 filteredTransactions length:', filteredTransactions.length)}
+            {console.log('🔢 Total filteredTransactions amount:', filteredTransactions.reduce((sum, t) => sum + t.amount, 0))}
+            <FinancialAnalysis
+              monthlyBudget={monthlyBudget}
+              fixedExpenses={userData?.budgetItems || []}
+              variableExpenses={filteredTransactions}
+              allTransactions={transactions}
+            />
+          </>
         )}
 
       </main>

@@ -124,6 +124,14 @@ const AdminCleanup: React.FC<AdminCleanupProps> = ({ onClose }) => {
                   </span>
                   <span className="stat-label">Sin Datos</span>
                 </div>
+                <div className="stat">
+                  <span className="stat-number">
+                    ${users.reduce((total, user) => 
+                      total + user.purchases.reduce((sum, purchase) => sum + purchase.amount, 0), 0
+                    ).toLocaleString('es-CL')}
+                  </span>
+                  <span className="stat-label">Total Gastos</span>
+                </div>
               </div>
 
               <div className="admin-cleanup-actions">

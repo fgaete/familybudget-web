@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { userService } from '../services/userService';
-import { useTranslations } from '../utils/i18n';
+// Removed translations import
 import './BudgetSetup.css';
 
 interface BudgetSetupProps {
@@ -11,7 +11,7 @@ interface BudgetSetupProps {
 
 const BudgetSetup: React.FC<BudgetSetupProps> = ({ onComplete, currentBudget = 0 }) => {
   const { currentUser } = useAuth();
-  const t = useTranslations();
+  // Removed translations hook
   const [budget, setBudget] = useState(currentBudget.toString());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,18 +20,18 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ onComplete, currentBudget = 0
     e.preventDefault();
     
     if (!currentUser) {
-      setError(t.userNotAuthenticated);
+      setError('Usuario no autenticado');
       return;
     }
     
     const budgetAmount = parseFloat(budget.replace(/[^\d]/g, ''));
     if (isNaN(budgetAmount) || budgetAmount <= 0) {
-      setError(t.invalidBudgetAmount);
+      setError('Por favor ingresa un presupuesto válido mayor a 0');
       return;
     }
 
     if (budgetAmount > 100000000) {
-      setError(t.budgetTooHigh);
+      setError('El presupuesto no puede ser mayor a $100.000.000');
       return;
     }
 
@@ -48,14 +48,14 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ onComplete, currentBudget = 0
       console.log('💰 Presupuesto procesado:', { original: budget, clean: cleanBudget, amount: budgetAmount });
       
       if (!budgetAmount || budgetAmount <= 0) {
-        console.error('❌', t.invalidAmount + ':', budgetAmount);
-        setError(t.invalidBudgetAmount);
+        console.error('❌', 'Monto inválido:', budgetAmount);
+        setError('Por favor ingresa un presupuesto válido mayor a 0');
         return;
       }
       
       if (budgetAmount > 100000000) {
-        console.error('❌', t.amountTooHigh + ':', budgetAmount);
-        setError(t.budgetTooHigh);
+        console.error('❌', 'Monto demasiado alto:', budgetAmount);
+        setError('El presupuesto no puede ser mayor a $100.000.000');
         return;
       }
       
@@ -76,15 +76,15 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ onComplete, currentBudget = 0
     } catch (error: any) {
        console.error('Error updating budget:', error);
        if (error.message === 'Timeout') {
-         setError(t.operationTimeout);
+         setError('La operación está tardando más de lo esperado. Verifica tu conexión a internet e intenta nuevamente.');
        } else if (error.code === 'permission-denied') {
-         setError(t.noPermissions);
+         setError('No tienes permisos para actualizar el presupuesto. Verifica tu autenticación.');
        } else if (error.code === 'unavailable') {
-         setError(t.firebaseUnavailable);
+         setError('Servicio de Firebase no disponible. Verifica tu conexión a internet.');
        } else if (error.code === 'network-request-failed') {
-         setError(t.connectionError);
+         setError('Error de conexión. Verifica tu internet e intenta nuevamente.');
        } else {
-         setError(`${t.errorSavingBudget}: ${error.message || t.unknownError}. ${t.tryAgain}`);
+         setError(`Error al guardar el presupuesto: ${error.message || 'Error desconocido'}. Intenta nuevamente`);
        }
      } finally {
       setLoading(false);
@@ -110,10 +110,10 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ onComplete, currentBudget = 0
     <div className="budget-setup-overlay">
       <div className="budget-setup-card">
         <div className="budget-setup-header">
-          <h2>{t.setupMonthlyBudget}</h2>
-          <p>{t.setBudgetFor} <strong>{currentMonth}</strong></p>
+          <h2>Configura tu Presupuesto Mensual</h2>
+          <p>Establece tu presupuesto para <strong>{currentMonth}</strong></p>
           <p className="budget-description">
-            {t.budgetDescription}
+            Este será tu presupuesto total disponible para compras y menús. Los gastos fijos como créditos y servicios se manejan por separado.
           </p>
         </div>
 
@@ -125,7 +125,7 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ onComplete, currentBudget = 0
           )}
 
           <div className="budget-input-group">
-            <label htmlFor="budget">{t.monthlyBudget}</label>
+            <label htmlFor="budget">Presupuesto Mensual</label>
             <div className="currency-input">
               <span className="currency-symbol">$</span>
               <input
@@ -140,7 +140,7 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ onComplete, currentBudget = 0
           </div>
 
           <div className="budget-examples">
-            <p>{t.budgetExamples}</p>
+            <p>Ejemplos de presupuesto:</p>
             <div className="example-buttons">
               <button 
                 type="button" 
@@ -172,11 +172,11 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ onComplete, currentBudget = 0
               className="save-budget-btn"
               disabled={loading}
             >
-              {loading ? t.savingBudget : t.saveBudget}
+              {loading ? 'Guardando presupuesto...' : 'Guardar Presupuesto'}
             </button>
             {loading && (
               <p className="loading-message">
-                ⏳ {t.connectingFirebase}
+                ⏳ Conectando con Firebase... Esto puede tardar unos segundos.
               </p>
             )}
           </div>
@@ -186,15 +186,15 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ onComplete, currentBudget = 0
           <div className="info-item">
             <span className="info-icon">💰</span>
             <div>
-              <strong>{t.flexibleBudget}</strong>
-              <p>{t.flexibleBudgetDesc}</p>
+              <strong>Presupuesto Flexible</strong>
+              <p>Puedes cambiar tu presupuesto mensual en cualquier momento</p>
             </div>
           </div>
           <div className="info-item">
             <span className="info-icon">📊</span>
             <div>
-              <strong>{t.automaticTracking}</strong>
-              <p>{t.automaticTrackingDesc}</p>
+              <strong>Seguimiento Automático</strong>
+              <p>Tus compras y menús se descontarán automáticamente</p>
             </div>
           </div>
         </div>

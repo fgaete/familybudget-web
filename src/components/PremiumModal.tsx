@@ -1,10 +1,10 @@
 import React from 'react';
 import { useSubscription } from '../contexts/SubscriptionContext';
-import { useTranslations } from '../utils/i18n';
+// Removed translations import
 
 const PremiumModal: React.FC = () => {
   const { showPremiumModal, setShowPremiumModal, upgradeToPremium } = useSubscription();
-  const t = useTranslations();
+  // Removed translations hook
 
   if (!showPremiumModal) return null;
 
@@ -12,7 +12,7 @@ const PremiumModal: React.FC = () => {
     <div className="premium-modal-overlay">
       <div className="premium-modal">
         <div className="premium-modal-header">
-          <h2>🌟 {t.upgradeToPremium}</h2>
+          <h2>🌟 Actualizar a Premium</h2>
           <button 
             className="close-button"
             onClick={() => setShowPremiumModal(false)}
@@ -25,27 +25,27 @@ const PremiumModal: React.FC = () => {
           <div className="premium-price">
             <span className="price-amount">$2.490</span>
             <span className="price-currency">CLP</span>
-            <span className="price-period">/{t.monthly}</span>
+            <span className="price-period">/Mensual</span>
           </div>
           
           <div className="premium-benefits">
-            <h3>{t.premiumBenefits}</h3>
+            <h3>Beneficios Premium</h3>
             <ul>
               <li>
                 <span className="benefit-icon">💰</span>
-                {t.fixedExpensesFeature}
+                Gestión completa de gastos fijos mensuales
               </li>
               <li>
                 <span className="benefit-icon">📊</span>
-                {t.specialCategoriesFeature}
+                Categorías especiales y personalizadas
               </li>
               <li>
                 <span className="benefit-icon">📈</span>
-                {t.budgetAnalysisFeature}
+                Análisis detallado de presupuesto con gráficos
               </li>
               <li>
                 <span className="benefit-icon">💵</span>
-                {t.variableBudgetFeature}
+                Presupuestos variables por categoría
               </li>
             </ul>
           </div>
@@ -55,13 +55,13 @@ const PremiumModal: React.FC = () => {
               className="upgrade-button"
               onClick={upgradeToPremium}
             >
-              {t.upgradeNow}
+              Actualizar Ahora
             </button>
             <button 
               className="cancel-button"
               onClick={() => setShowPremiumModal(false)}
             >
-              {t.maybeLater}
+              Tal vez más tarde
             </button>
           </div>
         </div>
