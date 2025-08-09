@@ -328,7 +328,7 @@
 
 /* Categories Grid */
 .categories-grid {
-  position: absolute;
+  position: block;
   top: 100%;
   left: 0;
   right: 0;
