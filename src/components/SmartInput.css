@@ -342,7 +342,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: var(--space-sm);
-  max-height: 300px;
+  max-height: auto;
   overflow-y: auto;
   animation: dropdown-appear 0.2s ease-out;
 }
